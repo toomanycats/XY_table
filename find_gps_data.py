@@ -6,6 +6,10 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 
 class find_gps_data(object):
+    """
+    This class uses the PIL to access exif data for evidence of GPS information hidden in jpg's. 
+    Specifically, it checks for the presence of the gpsinfo tag.
+    """
     def __init__(self, root):
         self.root = root
         self.pos_list = []
@@ -13,6 +17,7 @@ class find_gps_data(object):
         self.exif_data = {}
 
     def find_data(self):
+        """This the main(). """
         self.check_path()
         self.walk(self.root)   
         if self.pos_list:
@@ -23,21 +28,26 @@ class find_gps_data(object):
             print "No GPS data found."
     
     def check_path(self):
+        """Error checking the input path argument. """
         if not os.path.exists(self.root):
             print "The path %s does not exist, exiting program." % self.root
             sys.exit()
         
     def walk(self, root):
-        #print root
+        """ Generate the list of dirs and files to walk while looking for jpg's. """
+        print "root dir is: %s" % root
         for root, dirs, files in os.walk(root):
             if files is not None:
-                for file in files:
-                    self.find_jpgs(os.path.join(root,file))
+                for f in files:
+                    self.find_jpgs(os.path.join(root,f))
             if dirs is not None:
                 for dir in dirs:
+                    print "dir is: %s" % dir
                     self.walk(os.path.join(root, dir))
-    
+                  
     def find_jpgs(self, path):
+        """Search the individual files returned from walk() 
+        and append paths for jpegs that test positive for the gpsinfo tag. """
         #print path
         if not os.path.isdir(path) and path[-3:].lower() == 'jpg' or  path[-4:].lower() == 'jpeg':
                 pos = self.check_file(path)
@@ -57,11 +67,13 @@ class find_gps_data(object):
                         walk_dirs(path,ob)
             
     def load_exif_data(self,img):
+        """ Loads the char string values for the binary exif tags."""
         for k,v in img._getexif().items():
             if k in TAGS.keys():
                 self.exif_data[TAGS.get(k)] = v 
     
     def check_file(self,path):
+        """ Check an individual jpg for the gpsinfo tag."""
         #print "checking %s" %path
         try:
             img = Image.open(path)
@@ -81,9 +93,6 @@ class find_gps_data(object):
                 print "ERROR: " + self.error.message + '\n' + path + '\n'
             
             
-#if __name__ == '__main__':
-#    print "Starting program to find GPS meta data in JPG files. \n"
-#    gps_data = find_gps_data.find_gps_data(str(sys.argv[1])).find_data()
     
         
             
