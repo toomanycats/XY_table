@@ -15,6 +15,7 @@ class takeData:
     def main(self):
         self.setup()
         self.record_data()
+        self.plot_data()
         self.save_data()
 
     def plot_data(self):
@@ -100,6 +101,8 @@ class takeData:
         freqstop = raw_input("Enter the stop frequency (GHz): ")
         self.freqstart = float(freqstart)
         self.freqstop = float(freqstop) 
+        
+        self.verify_continue()
  
     def check_parameters(self):
         #Checks the parameter setting.
@@ -155,16 +158,16 @@ class takeData:
         self.status_byte()
         #Recieve data as a long ascii string.
         g.write(16,"OUTPDATA")
-        mydata=g.read(16,1000000)
+        raw_data = g.read(16,1000000)#read many bytes 
         g.clear(16)
          
         #Parse string to create numerical data matrix.
-        mydata=mydata.replace("\n",",")
-        mynumbers=np.fromstring(mydata,sep=",")
-        print "Number of floats read: " + str(len(mynumbers)) + "\n" 
+        data = raw_data.replace("\n",",")
+        data = np.fromstring(data,sep=",")
+        print "Number of floats read: " + str(len(data)) + "\n" 
         #Should help let the user know things worked properly.
        
-        self.len_data = (len(mynumbers)) / 2 #This is how we figure out the number of freq pts.
+        self.len_data = (len(data)) / 2 #This is how we figure out the number of freq pts.
          
         self.data_mat = np.zeros((len_data,2))
         self.trans_data = np.zeros(len_data)
@@ -175,33 +178,26 @@ class takeData:
          
         #Put data into a two column matrix. Also gets the magnitude and phase.
         for i in range(0,len_data):
-            self.data_mat[i,0] = mynumbers[2*i]
-            self.data_mat[i,1] = mynumbers[2*i+1]
+            self.data_mat[i,0] = data[2*i]
+            self.data_mat[i,1] = data[2*i+1]
             self.trans_data[i] = self.data_mat[i,0]**2 + self.data_mat[i,1]**2
-            self.phi[i] = np.angle(complex(self.data_mat[i, 0], self.data_mat[i, 1]))
+            self.phi[i] = np.angle(complex(self.data_mat[i, 0], self.data_mat[i, 1]))e
         
+        proc = os.popen("mplayer -really-quiet chime.wav  > /dev/null 2>&1") 
+        proc.close() 
         
-        #Beep to alert user that a run is finished and it is time to save the file.
-        #for pitch in xrange(300,600,100):
-        #    beepstring='beep -f '+str(pitch)+' -r 1 -d 150 -l 200'  
-        #    os.system(beepstring)  
-        p=os.popen("mplayer -really-quiet chime.wav  > /dev/null 2>&1")
-        p.close
-     
     def status_byte(self): 
          #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
-         singdone = 0;
+         singdone = 0
          while singdone is not 1:
              time.sleep(0.5)
              hex_byte = g.rsp(16)
              hex_byte = "%r" %hex_byte
              hex_byte = hex_byte.replace("\\","0")
              hex_byte = hex_byte.replace("'","")
-             statbyte = bin(int(hex_byte,16))
+             stat_byte = bin(int(hex_byte,16))
              #output: '0b10001'
-             singdone = statbyte[len(statbyte)-5]
-         
-         return  singdone
+             singdone = stat_byte[len(stat_byte)-5]
 
     def save_data(self):
         #Save data with specified filename. Also prevents accidental overwrites of files.
@@ -255,7 +251,9 @@ class takeData:
  
                 #repeat the process for a new data sweep?
         self.AGAIN=raw_input("Take another run? See another plot? (y/n/linmag/logmag/phase) ")
-     
+        if self.AGAIN == 'y':
+            self.record_data()
+        
     def run_again(self):
         if self.AGAIN ==' y':
             manualchanges = raw_input("Do you want a break to change some settings manually? (y/n): ")
@@ -266,23 +264,7 @@ class takeData:
                 pausescript = raw_input("Okay. Press the LOCAL button and change any settings you want. Hit enter here when you're done.")
                 #Reconnect and check the settings. ASSUMES FREQ RANGE IS UNCHANGED.
                 self.check_parameters()
-        self.check_CAL()
-
-    def save_ascii_data(self, self.data_mat):
-        
-        header_template = '''
-%% %(titlestr)s 
-%% %(freq_start)s : %(freq_stop)s GH
-'''  %{'titlestr':self.titlestr, 'freq_start':self.freqstart,'freq_stop':self.freqstop}	
-    
-        np.savetxt(self.fullpath + ".dat", self.data_mat) 
-        file = open(self.fullpath + ".dat",'r')
-        matrixstr = file.read()
-        file.close()
-        file = open(self.fullpath + ".dat",'w')
-        file.write(header_template + '\n\n' + matrixstr)
-        file.close()
-        
+        self.check_CAL()        
     def get_fileowner(self):
         p = os.popen("ls -l " + self.fullpath + ".mat")
         fileowner = p.readline()
