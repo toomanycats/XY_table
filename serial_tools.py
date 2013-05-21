@@ -43,7 +43,10 @@ class SerialTools(object):
         pat = '[0-9]+\r\n'       
         error_code = self._loop_structure(pat)
         error_code = int(error_code.replace('\r\n',''))
-        print self.Error_codes[error_code] 
+        if self.Error_codes.has_key(error_code):
+            print self.Error_codes[error_code] 
+        else:
+            print "Error code %i was raised by the motor." %error_code
 
     def getDeviceName(self):
         self.con.flushOutput()

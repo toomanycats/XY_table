@@ -10,54 +10,53 @@ import getpass
 
 class takeData:
     def __init__(self):
-        pass
+        self.AGAIN = True
+        self.plot_type = 'logmag'
+        self.plot_bool = False
 
     def main(self):
-        self.setup()
-        self.record_data()
-        self.plot_data()
-        self.save_data()
+        try:
+            while self.AGAIN:
+                self.setup()
+                self.record_data()
+                self.prompt_user_for_plot()
+                if self.plot_bool is True:
+                    self.plot_data()
+                self.save_data()
+                self.prompt_user_for_another_run()
+        finally:
+            print "End of program.\n"
 
     def plot_data(self):
+        self._set_plot_type()
         mp.ion() #Turns on interactive plot mode, which allows user to use the terminal without closing the plot.
         #Get time and date for the plot title.
-        self.AGAIN = 'logmag'
-        self.titlestr = self.fullpath + ".dat" + "  " + self.calsstring + "  " + self.param + "  " + datestrsimp
-        while True:
-            if self.AGAIN == 'logmag':
-                print "Plotting logmag."
-                #PLOT logaritmic transmission data. Labels graph with details of the data run.
-                logT = np.log10(self.trans_data) * 10
-                mp.clf()
-                mp.plot(self.freq, logT)
-                mp.title(self.titlestr)
-                mp.xlim( (self.freqstart, freqstop) )
-                mp.xlabel("Frequency (GHz)")
-                mp.ylabel(ystr + " (dB)")
-                # xy=(x[5],logT[5])
-                # mp.annotate("Fix this point?",xy)
-            elif self.AGAIN == 'linmag':
-                print "Plotting linmag."
-                #PLOT linear transmission data.
-                mp.clf()
-                mp.plot(self.freq, self.trans_data)
-                mp.title(self.titlestr)
-                mp.xlim( (self.freqstart, freqstop) )
-                mp.xlabel("Frequency (GHz)")
-                mp.ylabel(ystr  + " linear")
-            elif self.AGAIN == 'phase':
-                print "Plotting phase."
-                #PLOT phase data.
-                mp.clf()
-                mp.plot(self.freq, self.phi)
-                mp.title(self.titlestr)
-                mp.xlim( (self.freqstart, freqstop) )
-                mp.xlabel("Frequency (GHz)")
-                mp.ylabel(ystr+" phase (radians)")
-            elif self.AGAIN == 'y' or self.AGAIN == 'n':
-                break
-            else:
-                print "Ur doing it wrong."
+        self.titlestr = self.fullpath + ".dat" + "  " + self.calsstring + "  " + self.param + "  " + date_str
+        mp.clf()
+        mp.xlim( (self.freqstart, freqstop) )
+        mp.xlabel("Frequency (GHz)")
+        
+        if self.plot_type == 'logmag':
+            print "Plotting logmag."
+            #PLOT logaritmic transmission data. Labels graph with details of the data run.
+            logT = np.log10(self.trans_data) * 10
+            mp.plot(self.freq, logT)
+            mp.title(self.titlestr)
+            mp.ylabel(ystr + " (dB)")
+   
+        elif self.plot_type == 'linmag':
+            print "Plotting linmag."
+            #PLOT linear transmission data.
+            mp.plot(self.freq, self.trans_data)
+            mp.title(self.titlestr)
+            mp.ylabel(ystr  + " linear")
+        
+        elif self.plot_type == 'phase':
+            print "Plotting phase."
+            #PLOT phase data.
+            mp.plot(self.freq, self.phi)
+            mp.title(self.titlestr)
+            mp.ylabel(ystr+" phase (radians)")
              
     def setup(self):
         self.AGAIN='y'
@@ -84,10 +83,10 @@ class takeData:
         g.write(16,"FORM4")
         #User chooses a folder particular to this data set.
         datasetname = raw_input("\nEnter a folder name for this data set (eg. HPUS2TM0717): ")
-        directory = os.path.join("/media/Data/", datasetname)
-        if not os.path.exists(directory):
+        self.directory = os.path.join("/media/Data/", datasetname)
+        if not os.path.exists(self.directory):
              #make directory and set appropriate permissions.
-             os.makedirs(directory)
+             os.makedirs(self.directory)
              #os.system('chown :gpib '+directory) ## S bit on group for /media/Data does this for us (2744)
              #os.system('chmod g+wx '+directory) ## allows group members to add to an existing data file made by another user and x is for cd-ing to it
         else:
@@ -107,17 +106,18 @@ class takeData:
     def check_parameters(self):
         #Checks the parameter setting.
             g.write(16, "PARA?")
-            self.param = g.read(16, 100)
-            if self.param == '"S12"\n':
+            param = g.read(16, 100)
+            self.param = param.replace('\n','').replace("",'')
+            if self.param == 'S12':
                  ystr = "Transmission"
                  print "You are taking TRANSMISSION(S12) data."
-            elif self.param =='"S11"\n':
+            elif self.param =='S11':
                  ystr = "Reflection"
                  print "You are taking REFLECTION(S11) data."
-            elif self.param =='"S21"\n':
+            elif self.param =='S21':
                  ystr = "Transmission"
                  print "You are taking TRANSMISSION(S21) data."
-            elif self.param == '"S22"\n':
+            elif self.param == 'S22':
                  ystr="Reflection"
                  print "You are taking REFLECTION(S22) data."
                  
@@ -154,7 +154,7 @@ class takeData:
         time.sleep(.5)
         g.write(16,"SING") 
              
-        print "Waiting for data."
+        print "Waiting for data.\n"
         self.status_byte()
         #Recieve data as a long ascii string.
         g.write(16,"OUTPDATA")
@@ -189,7 +189,7 @@ class takeData:
     def status_byte(self): 
          #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
          singdone = 0
-         while singdone is not 1:
+         while singdone != 1:
              time.sleep(0.5)
              hex_byte = g.rsp(16)
              hex_byte = "%r" %hex_byte
@@ -204,25 +204,23 @@ class takeData:
         savedone = False
         while savedone is not True:
         #save data using specified filename
-        print "Previous file name: " + self.PREVFILENAME
-        self.filename = raw_input("Saving data. Enter file name: ")
-        self.fullpath = os.path.join(directory,self.filename)
-              
-        if os.path.exists(self.fullpath + ".mat"):
-            self.get_fileowner()
-            if self.fileowner == usersname:
-                overwritefile = raw_input("Data file already exists! Are you sure you want to overwrite?! (y/n): ")
-            elif:
-                print "This file already exists. You can not overwrite it because it belongs to a different user."
-                overwritefile = 'n'
-            elif:
-                overwritefile = 'y'
-
+            print "Previous file name is: " + self.PREVFILENAME + '\n'
+            self.filename = raw_input("Saving data. Enter file name: ")
+            self.fullpath = os.path.join(self.directory,self.filename)
+                  
+            if os.path.exists(self.fullpath + ".mat"):
+                self.get_fileowner()
+                if self.fileowner == self.usersname:
+                    overwritefile = raw_input("Data file already exists! Are you sure you want to overwrite?! (y/n): ")
+                elif:
+                    print "This file already exists. You can not overwrite it because it belongs to a different user."
+                    overwritefile = 'n'
+    
             if overwritefile == 'y':
                 self.PREVFILENAME = self.filename
-                datestr = datetime.datetime.now()
-                datestrsimp = str(datestr)[0:19] #Cuts off the milliseconds for a simpler output.
-                headerstr = self.fullpath + ".dat" + "  " + self.calsstring + "  " + self.param.replace('\n','') + "  " + datestrsimp
+                self.date_str = self._get_date()
+                headerstr = """%(path)s  %(cal)s %(param)s %(date)s
+"""%{'path':self.fullpath + ".dat",'cal':self.calsstring,'param':self.param,'date':self.date_str}
                 #save_ascii_data(mymatrix, headerstr, usersname, freqstart, freqstop, self.fullpath)
                 freq_start = str(self.freqstart) 
                 freq_stop = str(self.freqstop)
@@ -248,11 +246,6 @@ class takeData:
                 os.system('chmod g-w '+self.fullpath+".mat") # removes the write bit, so that group members other than the creater cannot
                                                      # delete a file made by another gpib member. They must re name it. 
                 print "File Saved Successfully."
- 
-                #repeat the process for a new data sweep?
-        self.AGAIN=raw_input("Take another run? See another plot? (y/n/linmag/logmag/phase) ")
-        if self.AGAIN == 'y':
-            self.record_data()
         
     def run_again(self):
         if self.AGAIN ==' y':
@@ -264,10 +257,41 @@ class takeData:
                 pausescript = raw_input("Okay. Press the LOCAL button and change any settings you want. Hit enter here when you're done.")
                 #Reconnect and check the settings. ASSUMES FREQ RANGE IS UNCHANGED.
                 self.check_parameters()
-        self.check_CAL()        
+        self.check_CAL()    
+            
     def get_fileowner(self):
         p = os.popen("ls -l " + self.fullpath + ".mat")
         fileowner = p.readline()
         p.close
         self.fileowner = fileowner[13:13 + len(usersname)]
+        
+    def _get_date(self):
+        datestr = datetime.datetime.now()
+        self.date_str = str(datestr)[0:19] #Cuts off the milliseconds for a simpler output.     
+        
+    def prompt_user_for_plot(self):
+        plot_bool = raw_input("Do you wish to plot this data run? y/n")
+        plot_bool = plot_bool.capitalize()
+        if plot_bool == 'Y':
+            self.plot_bool = True
+        else:
+            self.plot_bool = False
+            
+    def _set_plot_type(self):
+        types = {'1':'logmag','2':'linmag','3':'phase'}   
+        for type in types.iterkeys():
+            print type + '\n'
+        
+        choice = raw_input("Select the type of plot you want:")
+        try:
+            self.plot_type = types[choice]
+        raise:
+            pass    
+
+    def prompt_user_for_another_run(self):
+        run_again = raw_input("Do you want to take another run? y/n")
+        if run_again.capitalize() == 'Y':
+            self.AGAIN = True
+        else:
+            self.AGAIN = False 
         
