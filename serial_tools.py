@@ -27,6 +27,11 @@ class SerialTools(object):
         if echk == True:
             self._check_for_mcode_error(arg)
 
+    def set_var(self, cmd, val, echk = False):
+        self.write("%s\075%val"%(cmd, val)
+        if echk == True:
+            self._check_for_mcode_error(arg)
+        
     def flush(self):
         self.con.flushInput()
         self.con.flushOutput()
@@ -70,3 +75,8 @@ class SerialTools(object):
         self.write('\03')
         print self.con.readline() 
 
+    def _get_port_number(self):
+        pass
+        #cmd = r"dmesg | grep -G ".*cp210x.*attached.*" | tail -l | sed -r 's/.*ttyUSB//'"
+        #(proc, PORT) = popen(cmd)
+        #return PORT
