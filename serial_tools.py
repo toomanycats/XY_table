@@ -132,8 +132,8 @@ The port will /dev/ttyUSB[0-9].\n\n"""
     def _inspect_port_log(self):
         '''for determing the ports of the serial-USB adaptors'''
         cmd = '''dmesg | grep -G ".*cp210x.*attached.*" | grep "*ttyUSB*'''
-        p = subprocess.Popen(shell=True, stdout=subprocess.PIPE, stderr= subprocess.PIPE)
+        p = subprocess.Popen(shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p.communicate
         if p.stderr:
-            print "Error in calling bash for port info: %s" p.stderr
+            print "Error in calling bash for port info: %s" %p.stderr
         print p.stdout + '\n'                
