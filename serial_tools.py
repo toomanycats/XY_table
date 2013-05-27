@@ -10,7 +10,7 @@ class SerialTools(object):
         self.origin_pos = 0
         self.current_pos = self.origin_pos
         self.choose_port()     
-        self.Error_codes = {20:'Tried to set unkown variable or flag',
+        self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
                        30:'Unknown label or user variable',
                        24:'Illegal data entered'
@@ -21,18 +21,22 @@ class SerialTools(object):
 The port will /dev/ttyUSB[0-9].\n\n"""
         self._inspect_port_log()
         motor_port = raw_input('Enter the numerical portion of the port,i.e. 0,1,2 etc.\n\n')
-        self.con.port = '/dev/ttyUSB%i' %motor_port
-        self.con.open()
+        self.con.port = '/dev/ttyUSB%s' %motor_port
+        try:
+            self.con.open()
+        except serial.SerialException:
+            print "Connection to motor unsuccessful.\n"  
+                
         if self.con.isOpen():
-            print "Connection to motor successful on port %s \n" %self.con.port
-        else:
-            print "Connection to serial motor interface unsuccessful.\n"    
+            print "Connection to motor successful on port %s \n" %self.con.port  
   
     def clear_error(self):
+        print "clearing errors \n"
         self.write('PR ER')
         sleep(0.1)
         self.write('PR EF')
         sleep(0.1)
+        self.con.readlines()
 
     def getPosition(self):
         self.flush()
@@ -49,7 +53,7 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         sleep(0.1)
         self.current_pos = self.current_pos + self.getPosition()
         
-        print "%(x_dist)s  New Pos.: %(pos)s " %{'x_dist':out_list[0],'pos':self.current_pos}
+        print "Moved: %(x_dist)s , New Pos: %(pos)s " %{'x_dist':x_dist,'pos':self.current_pos}
             
     def write(self, arg, echk = False):
         self.con.write("%s\r\n" %arg)
@@ -119,21 +123,21 @@ The port will /dev/ttyUSB[0-9].\n\n"""
     def reset(self):
         self.flush()
         self.clear_error()
-        print "Please wait while resetting.\n"
+        print "Returning to factory defaults and rebooting motor.\n"
         self.write('FD')
         sleep(3)
-        self.send_control_C()
+        self._send_control_C()
 
-    def send_control_C(self):
+    def _send_control_C(self):
         self.write('\03')
         sleep(2)
         print self.con.readlines()
 
     def _inspect_port_log(self):
         '''for determing the ports of the serial-USB adaptors'''
-        cmd = '''dmesg | grep -G ".*cp210x.*attached.*" | grep "*ttyUSB*'''
-        p = subprocess.Popen(shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p.communicate
-        if p.stderr:
-            print "Error in calling bash for port info: %s" %p.stderr
-        print p.stdout + '\n'                
+        cmd = '''dmesg | grep -G ".*cp210x.*attached.*" | grep "*ttyUSB*"'''
+        p = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (output, error) = p.communicate()
+        if error:
+            print "Error in calling bash for port info: %s" %error
+        print output + '\n'                
