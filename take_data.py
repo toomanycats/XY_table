@@ -11,16 +11,21 @@ import getpass
 class TakeData:
     def __init__(self):
         self.username = getpass.getuser()
-        print "Address of VNA (Should be 16!):"
-        chan = g.find("VNA")
-        print str(chan) + "\n"
-        self.clear()   
-        g.write(16,"FORM4")#set up ascii format    
+        self._open_con()
         
         self.AGAIN = True
         self.plot_type = 'logmag'
         self.plot_bool = False
-        
+        self._get_date()        
+        self.PREVFILENAME = ''
+
+    def _open_con(self):
+        print "Opening connection to VNA \n Address of VNA (Should be 16!):"
+        chan = g.find("VNA")
+        print str(chan) + "\n"
+        self.clear()   
+        g.write(16,"FORM4")#set up ascii format           
+
     def clear(self):
         g.clear(16)
         time.sleep(0.5)
@@ -28,9 +33,9 @@ class TakeData:
     def main(self):
         self.check_parameters()
         self.check_cal()
+        self.setup()
         try:
             while self.AGAIN:
-                self.setup()
                 self.record_data()
                 self.prompt_user_for_plot()
                 if self.plot_bool is True:
@@ -44,41 +49,42 @@ class TakeData:
         self._set_plot_type()
         mp.ion() #Turns on interactive plot mode, which allows user to use the terminal without closing the plot.
         #Get time and date for the plot title.
-        self.titlestr = self.fullpath + ".dat" + " " + self.calsstring + " " + self.param + " " + date_str
+        self.titlestr = self.directory + ".dat" + " " + self.calsstring + " " + self.param + " " + self.date_str
         mp.clf()
-        mp.xlim( (self.freqstart, freqstop) )
-        mp.xlabel("Frequency (GHz)")
-        
+        mp.xlim( (self.freqstart, self.freqstop) )
+        mp.xlabel("Frequency (GHz)")        
+
         if self.plot_type == 'logmag':
             print "Plotting logmag."
             #PLOT logaritmic transmission data. Labels graph with details of the data run.
             logT = np.log10(self.trans_data) * 10
             mp.plot(self.freq, logT)
             mp.title(self.titlestr)
-            mp.ylabel(ystr + " (dB)")
+            mp.ylabel(self.ystr + " (dB)")
    
         elif self.plot_type == 'linmag':
             print "Plotting linmag."
             #PLOT linear transmission data.
             mp.plot(self.freq, self.trans_data)
             mp.title(self.titlestr)
-            mp.ylabel(ystr + " linear")
+            mp.ylabel(self.ystr + " linear")
         
         elif self.plot_type == 'phase':
             print "Plotting phase."
             #PLOT phase data.
             mp.plot(self.freq, self.phi)
             mp.title(self.titlestr)
-            mp.ylabel(ystr+" phase (radians)")
+            mp.ylabel(self.ystr + " phase (radians)")
              
     def setup(self):
-        self.AGAIN='y'
-        self.DONTOVERWRITE='y'
-        self.PREVFILENAME="*example* DM_000"
+        #self.AGAIN='y'
+        #self.DONTOVERWRITE='y'
+        #self.PREVFILENAME="*example* DM_000"
  
         #User chooses a folder particular to this data set.
-        datasetname = raw_input("\nEnter a folder name for this data set (eg. HPUS2TM0717): ")
-        self.directory = os.path.join("/media/Data/", datasetname)
+        self.datasetname = raw_input("\nEnter a folder name for this data set (eg. HPUS2TM0717): ")
+       
+        self.directory = os.path.join("/media/Data/", self.datasetname)
         if not os.path.exists(self.directory):
              #make directory and set appropriate permissions.
              os.makedirs(self.directory)
@@ -90,8 +96,8 @@ class TakeData:
                  print "Enter a new name for the folder \n"
                  self.setup()
                  #g.close(16)
-                 #sys.exit("Goodbye")
-                 
+                 #sys.exit("Goodbye")         
+         
         #User must manually enter freq range
         freqstart = raw_input("Enter the start frequency (GHz): ")
         freqstop = raw_input("Enter the stop frequency (GHz): ")
@@ -106,16 +112,16 @@ class TakeData:
         param = g.read(16, 100)
         self.param = param.replace('\n','').replace('"','')
         if self.param == 'S12':
-            ystr = "Transmission"
+            self.ystr = "Transmission"
             print "You are taking TRANSMISSION(S12) data."
         elif self.param =='S11':
-            ystr = "Reflection"
+            self.ystr = "Reflection"
             print "You are taking REFLECTION(S11) data."
         elif self.param =='S21':
-            ystr = "Transmission"
+            self.ystr = "Transmission"
             print "You are taking TRANSMISSION(S21) data."
         elif self.param == 'S22':
-            ystr="Reflection"
+            self.ystr = "Reflection"
             print "You are taking REFLECTION(S22) data."
                  
     def check_cal(self):
@@ -202,65 +208,65 @@ class TakeData:
                  singdone = stat_byte[2]
 
     def save_data(self):
-        #Save data with specified filename. Also prevents accidental overwrites of files.
-        savedone = False
-        while savedone is not True:
-        #save data using specified filename
-            print "Previous file name is: " + self.PREVFILENAME + '\n'
-            self.filename = raw_input("Saving data. Enter file name: ")
-            self.fullpath = os.path.join(self.directory,self.filename)
-                  
-            if os.path.exists(self.fullpath + ".mat"):
-                self.get_fileowner()
-                if self.fileowner == self.usersname:
-                    overwritefile = raw_input("Data file already exists! Are you sure you want to overwrite?! (y/n): ")
+      
+        print "Previous file name is: " + self.datasetname + '\n'
+        self.filename = raw_input("Saving data. Enter file name: ")
+        self.fullpath = os.path.join(self.directory,self.filename)
+          
+        if os.path.exists(self.fullpath + ".dat"):
+            self.get_fileowner()
+            if self.fileowner == self.usersname:
+                overwrite = raw_input("Data file already exists! Are you sure you want to overwrite?! (y/n): ")
+                if overwrite == 'y':
+                    self._save_data()
                 else:
-                    print "This file already exists. You can not overwrite it because it belongs to a different user."
-                    overwritefile = 'n'
-    
-            if overwritefile == 'y':
-                self.PREVFILENAME = self.filename
-                self.date_str = self._get_date()
-                headerstr = """%(path)s %(cal)s %(param)s %(date)s
+                    self.save_data()
+            else:
+                print "This file already exists. You can not overwrite it because it belongs to a different user."
+           
+        self.PREVFILENAME = self.filename
+ 
+    def _save_data(self):
+       
+        headerstr = """%(path)s %(cal)s %(param)s %(date)s
 """%{'path':self.fullpath + ".dat",'cal':self.calsstring,'param':self.param,'date':self.date_str}
-                #save_ascii_data(mymatrix, headerstr, usersname, freqstart, freqstop, self.fullpath)
-                freq_start = str(self.freqstart)
-                freq_stop = str(self.freqstop)
+        #save_ascii_data(mymatrix, headerstr, usersname, freqstart, freqstop, self.fullpath)
+        freq_start = str(self.freqstart)
+        freq_stop = str(self.freqstop)
 
-                header_template = '''
+        header_template = '''
 %% %(headerstr)s
 %% %(freq_start)s : %(freq_stop)s GHz
 ''' %{'headerstr':headerstr, 'freq_start':freq_start,'freq_stop':freq_stop}
 
-                np.savetxt(self.fullpath + ".dat", self.data_mat)
-                fn = open(self.fullpath + ".dat",'r')
-                matrixstr = fn.read()
-                fn.close()
-                fn = open(os.path.join(self.fullpath,".dat"),'w')
-                fn.write(header_template + '\n\n' + matrixstr)
-                fn.close()
+        np.savetxt(self.fullpath + ".dat", self.data_mat)
+        f = open(self.fullpath + ".dat",'r')
+        matrixstr = f.read()
+        f.close()
+    
+        f = open(self.fullpath + ".dat",'w')
+        f.write(header_template + '\n\n' + matrixstr)
+        f.close()
 
-                scipy.io.savemat(self.fullpath,mdict={self.filename : self.data_mat}) #files are named as the rotation angle of sweep
-                savedone = True
-                #Set correct permissions on the new file.
-                #os.system('chown :gpib '+self.fullpath+".mat") S bit set this for all files in /media/Data
-                os.system('chmod g-w '+self.fullpath+".dat") # removes the write bit, so that group members other than the creater cannot
-                os.system('chmod g-w '+self.fullpath+".mat") # removes the write bit, so that group members other than the creater cannot
-                                                     # delete a file made by another gpib member. They must re name it.
-                print "File Saved Successfully."
-        
-    def run_again(self):
-        if self.AGAIN ==' y':
-            manualchanges = raw_input("Do you want a break to change some settings manually? (y/n): ")
-            if manualchanges == 'y':
-                print "Wait a moment..."
-                g.close(16)
-                time.sleep(2)
-                pausescript = raw_input("Okay. Press the LOCAL button and change any settings you want. Hit enter here when you're done.")
-                #Reconnect and check the settings. ASSUMES FREQ RANGE IS UNCHANGED.
-                self.check_parameters()
-        self.check_CAL()
-            
+        scipy.io.savemat(self.fullpath,mdict={self.filename : self.data_mat}) 
+    
+        #Set correct permissions on the new file.
+        #os.system('chown :gpib '+self.fullpath+".mat") S bit set this for all files in /media/Data
+        os.system('chmod g-w ' + self.fullpath + ".dat") # removes the write bit, so that group members other than the creater cannot
+        os.system('chmod g-w ' + self.fullpath + ".mat") # removes the write bit, so that group members other than the creater cannot
+	                                        # delete a file made by another gpib member. They must re name it.
+        print "File Saved Successfully."
+
+    def _make_changes(self):
+        manualchanges = raw_input("Do you want a break to change some settings manually? (y/n): ")
+        if manualchanges == 'y':
+            print "Wait a moment..."
+            g.close(16)
+            time.sleep(2)
+            pausescript = raw_input("Okay. Press the LOCAL button and change any settings you want. Hit enter here when you're done.")
+            #Reconnect and check the settings. ASSUMES FREQ RANGE IS UNCHANGED.
+        self._open_con()          
+    
     def get_fileowner(self):
         p = os.popen("ls -l " + self.fullpath + ".mat")
         fileowner = p.readline()
@@ -272,7 +278,7 @@ class TakeData:
         self.date_str = str(datestr)[0:19] #Cuts off the milliseconds for a simpler output.
         
     def prompt_user_for_plot(self):
-        plot_bool = raw_input("Do you wish to plot this data run? y/n")
+        plot_bool = raw_input("Do you wish to plot this data run? y/n: ")
         plot_bool = plot_bool.capitalize()
         if plot_bool == 'Y':
             self.plot_bool = True
@@ -281,10 +287,11 @@ class TakeData:
             
     def _set_plot_type(self):
         types = {'1':'logmag','2':'linmag','3':'phase'}
-        for type in types.iterkeys():
-            print type + '\n'
+        for key in types.iterkeys():
+            print "%(key)s  %(val)s" %{'key':key,'val':types[key]}
         
-        choice = raw_input("Select the type of plot you want:")
+        choice = raw_input("Select the type of plot you want(num): ")
+        
         try:
             self.plot_type = types[choice]
         finally:
@@ -294,5 +301,6 @@ class TakeData:
         run_again = raw_input("Do you want to take another run? y/n")
         if run_again.capitalize() == 'Y':
             self.AGAIN = True
+            self._make_changes()
         else:
             self.AGAIN = False 
