@@ -9,7 +9,7 @@ class SerialTools(object):
         self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.origin_pos = 0
         self.current_pos = self.origin_pos
-        self.choose_port()     
+        self.choose_port()
         self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
                        30:'Unknown label or user variable',
@@ -25,10 +25,10 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         try:
             self.con.open()
         except serial.SerialException:
-            print "Connection to motor unsuccessful.\n"  
+            print "Connection to motor unsuccessful.\n"
                 
         if self.con.isOpen():
-            print "Connection to motor successful on port %s \n" %self.con.port  
+            print "Connection to motor successful on port %s \n" %self.con.port
   
     def clear_error(self):
         print "clearing errors \n"
@@ -76,7 +76,7 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         self._set_var('MS', str(val), echk)
 
     def set_device_name(self, name, echk = False):
-        self._set_var('DN',"%s" %name)   
+        self._set_var('DN',"%s" %name)
         print "Device name: %s" %self.getDeviceName()
         
     def flush(self):
@@ -140,4 +140,4 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         (output, error) = p.communicate()
         if error:
             print "Error in calling bash for port info: %s" %error
-        print output + '\n'                
+        print output + '\n' 
