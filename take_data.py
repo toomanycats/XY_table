@@ -7,6 +7,9 @@ import os
 import datetime
 import sys
 import getpass
+import smtplib
+from email.mime.text import MIMEText
+import traceback
 
 class TakeData:
     def __init__(self):
@@ -38,14 +41,16 @@ class TakeData:
             while self.AGAIN:
                 self.record_data()
                 self.prompt_user_for_plot()
-                if self.plot_bool is True:
-                    self.plot_data()
                 self.save_data()
                 self.prompt_user_for_another_run()
+        except:
+            print "Fatal error occurred, email-ing system admin."
+            msg = trackback.print_last()
+            self._notify_admin_error(msg)   
         finally:
             print "End of program.\n"
 
-    def plot_data(self):
+    def _plot_data(self):
         self._set_plot_type()
         mp.ion() #Turns on interactive plot mode, which allows user to use the terminal without closing the plot.
         #Get time and date for the plot title.
@@ -281,9 +286,7 @@ class TakeData:
         plot_bool = raw_input("Do you wish to plot this data run? y/n: ")
         plot_bool = plot_bool.capitalize()
         if plot_bool == 'Y':
-            self.plot_bool = True
-        else:
-            self.plot_bool = False
+            self._plot_data() 
             
     def _set_plot_type(self):
         types = {'1':'logmag','2':'linmag','3':'phase'}
@@ -304,3 +307,24 @@ class TakeData:
             self._make_changes()
         else:
             self.AGAIN = False 
+
+    def _notify_admin_error(self, email_text):
+
+        # Create a text/plain message
+        msg = MIMEText(email_text)
+        
+        # me == the sender's email address
+        me = 'Man Lab Data Machine'
+        # you == the recipient's email address
+        recipients = ['wmanlab@gmail.com', 'dpcuneo@gmail.com']
+        msg['Subject'] = 'Automatically generated email.'
+        msg['From'] = "Dr. Man's Lab"
+        msg['To'] = 'System Admin.'
+        
+        # Send the message via our own SMTP server, but don't include the
+        # envelope header.
+        s = smtplib.SMTP('smtp.gmail.com:587')
+        s.starttls()  
+        s.login('wmanlab','debye100!')  
+        s.sendmail(me, recipients, msg.as_string())
+        s.quit()
