@@ -308,10 +308,17 @@ class TakeData:
         else:
             self.AGAIN = False 
 
-    def _notify_admin_error(self, email_text):
+    def _notify_admin_error(self, traceback):
+        
+        email_body = """
+%(username)s
+%(date)s
 
+%(trackback)s        
+""" %{'username':self.username,'date':self.date_str,'traceback':traceback}
+        
         # Create a text/plain message
-        msg = MIMEText(email_text)
+        msg = MIMEText(email_body)
         
         # me == the sender's email address
         me = 'Man Lab Data Machine'
