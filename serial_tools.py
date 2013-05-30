@@ -7,6 +7,7 @@ class SerialTools(object):
 
     def __init__(self):
         self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
+        self.DeviceName = None
         self.origin_pos = 0
         self.current_pos = self.origin_pos
         self.choose_port()
@@ -38,20 +39,27 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         sleep(0.1)
         self.con.readlines()
 
-    def getPosition(self):
+    def set_pos(self, pos):
+        if not isinstance(pos,int):
+            print "Enter an integer only."
+            return
+        self._set_var('P',pos)
+        self.current_pos = pos
+
+    def _get_position(self):
         self.flush()
         self.con.write('PR P\r\n')
-        pat = '[0-9]+\r\n'
+        pat = '\-*[0-9]+\r\n'
         output = self._loop_structure(pat)
-        
-        return float(output.replace('\r\n',''))
+
+        return int(output.replace('\r\n',''),16)
 
     def move_rel(self, x_dist):
         self.flush()
         sleep(0.1)
-        self.write('MR %f' %x_dist)
+        self.write('MR %i' %x_dist)
         sleep(0.1)
-        self.current_pos = self.current_pos + self.getPosition()
+        self.current_pos += self._get_position()
         
         print "Moved: %(x_dist)s , New Pos: %(pos)s " %{'x_dist':x_dist,'pos':self.current_pos}
             
@@ -76,9 +84,13 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         self._set_var('MS', str(val), echk)
 
     def set_device_name(self, name, echk = False):
-        self._set_var('DN',"%s" %name)
-        print "Device name: %s" %self.getDeviceName()
-        
+        pat = '[A-Z]'
+        if not re.match(pat, name):
+            print "Names must be one Char only.\n"
+            return 
+        self._set_var('DN','"%s"' %name)
+        self._getDeviceName()
+
     def flush(self):
         self.con.flushInput()
         sleep(0.2)
@@ -102,20 +114,20 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         else:
             print "Error code %i was raised by the motor." %error_code
 
-    def getDeviceName(self):
+    def _getDeviceName(self):
         self.con.flushOutput()
-        self.con.write('PR DN\r\n')
+        self.con.write('PR DN\r\n')#don't use self.write b/c the readlines will flush the buffer
         sleep(0.1)
         # the name returns like: '"Name"\r\n'
-        pat = '".*"\r\n'
+        pat = '"[A-Z]+"\r\n'
         DeviceName = self._loop_structure(pat)
         self.DeviceName = DeviceName.replace('\r\n','')
 
     def _loop_structure(self, pat):
         sleep(0.1)
         re_obj = re.compile(pat)
-        self.readback = self.con.readlines()
-        for item in self.readback:
+        readback = self.con.readlines()
+        for item in readback:
             if re_obj.match(item) is not None:
                 return item
         return "unknown"
@@ -138,7 +150,6 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         cmd = '''dmesg | grep -G ".*cp210x.*attached.*" | grep ".*ttyUSB*" | tail -5'''
         p = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (output, error) = p.communicate()
-        print output + '\n'
         if error:
             print "Error in calling bash for port info: %s" %error
         print output + '\n' 
