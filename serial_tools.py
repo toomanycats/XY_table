@@ -135,9 +135,18 @@ The port will /dev/ttyUSB[0-9].\n\n"""
 
     def _inspect_port_log(self):
         '''for determing the ports of the serial-USB adaptors'''
-        cmd = '''dmesg | grep -G ".*cp210x.*attached.*" | grep "*ttyUSB*"'''
+        cmd = '''dmesg | grep -G ".*cp210x.*attached.*" | grep ".*ttyUSB*" | tail -5'''
         p = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (output, error) = p.communicate()
+        print output + '\n'
         if error:
             print "Error in calling bash for port info: %s" %error
         print output + '\n' 
+
+    def close(self):
+        self.con.close()
+        bool = self.con.isOpen()
+        if bool is False:
+            print "Motor port closed"
+        else:
+            print "Closing motor failed, still connected"
