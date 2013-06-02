@@ -1,4 +1,6 @@
-Python
+Motor_tools
 ======
 
-small projects to keep me busy....
+Wrapper to control MDrive 23 from Schnieder Electric.
+Also contains a module of handy tools called code_tools.py.
+
