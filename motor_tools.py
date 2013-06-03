@@ -7,10 +7,11 @@ class MotorTools(object):
 
     def __init__(self):
         self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
-        self.DeviceName = None
-        self.origin_pos = 0
-        self.current_pos = self.origin_pos
+        self.MicroStep = '256'
+        self.OriginPos = 0
+        self.CurrentPos = 0
         self.choose_port()
+        self.DeviceName = self._getDeviceName()
         self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
                        30:'Unknown label or user variable',
@@ -44,7 +45,7 @@ The port will /dev/ttyUSB[0-9].\n\n"""
             print "Enter an integer only."
             return
         self._set_var('P',pos)
-        self.current_pos = pos
+        self.CurrentPos = pos
 
     def _get_position(self):
         self.flush()
@@ -52,16 +53,15 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         pat = '\-*[0-9]+\r\n'
         output = self._loop_structure(pat)
 
-        return int(output.replace('\r\n',''),16)
+        return int(output.replace('\r\n',''))
 
     def move_rel(self, x_dist):
         self.flush()
         sleep(0.1)
         self.write('MR %i' %x_dist)
         sleep(0.1)
-        self.current_pos += self._get_position()
-        
-        print "Moved: %(x_dist)s , New Pos: %(pos)s " %{'x_dist':x_dist,'pos':self.current_pos}
+        self.CurrentPos = self._get_position()
+        print "Moved: %(x_dist)s , New Pos: %(pos)s " %{'x_dist':x_dist,'pos':str(self.CurrentPos)}
             
     def write(self, arg, echk = False):
         self.con.write("%s\r\n" %arg)
@@ -115,13 +115,13 @@ The port will /dev/ttyUSB[0-9].\n\n"""
             print "Error code %i was raised by the motor." %error_code
 
     def _getDeviceName(self):
-        self.con.flushOutput()
-        self.con.write('PR DN\r\n')#don't use self.write b/c the readlines will flush the buffer
+        self.flush()
+        self.con.write('PR DN\r\n')
         sleep(0.1)
         # the name returns like: '"Name"\r\n'
-        pat = '"[A-Z]+"\r\n'
+        pat = '\"\!|[A-Z]\"\r\n'
         DeviceName = self._loop_structure(pat)
-        self.DeviceName = DeviceName.replace('\r\n','')
+        self.DeviceName = DeviceName.strip('\n').strip('\r')
 
     def _loop_structure(self, pat):
         sleep(0.1)
