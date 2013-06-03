@@ -7,12 +7,12 @@ class MotorTools(object):
 
     def __init__(self):
         self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
-        self.MicroStep = '256'
         self.OriginPos = 0
         self.CurrentPos = 0
         self.choose_port()
         sleep(0.2)
         self.DeviceName = self._getDeviceName()
+        self.MicroStep = self._get_ms()
         self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
                        30:'Unknown label or user variable',
@@ -47,6 +47,14 @@ The port will /dev/ttyUSB[0-9].\n\n"""
             return
         self._set_var('P',pos)
         self.CurrentPos = pos
+
+    def _get_ms(self):
+        self.flush()
+        self.con.write('PR MS\r\n')
+        pat = '[0-9]+\r\n'
+        ms = self._loop_structure(pat)
+
+        return  int(ms.strip('\n').strip('\r'))
 
     def _get_position(self):
         self.flush()
@@ -83,6 +91,8 @@ The port will /dev/ttyUSB[0-9].\n\n"""
     
     def set_micro_step(self, val, echk = True):
         self._set_var('MS', str(val), echk)
+        sleep(0.2)
+        self.MicroStep = self._get_ms()
 
     def set_device_name(self, name, echk = False):
         pat = '[A-Z]'
