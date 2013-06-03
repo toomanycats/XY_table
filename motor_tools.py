@@ -11,6 +11,7 @@ class MotorTools(object):
         self.OriginPos = 0
         self.CurrentPos = 0
         self.choose_port()
+        sleep(0.2)
         self.DeviceName = self._getDeviceName()
         self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
@@ -89,7 +90,8 @@ The port will /dev/ttyUSB[0-9].\n\n"""
             print "Names must be one Char only.\n"
             return 
         self._set_var('DN','"%s"' %name)
-        self._getDeviceName()
+        sleep(0.2)
+        self.DeviceName = self._getDeviceName()
 
     def flush(self):
         self.con.flushInput()
@@ -116,12 +118,13 @@ The port will /dev/ttyUSB[0-9].\n\n"""
 
     def _getDeviceName(self):
         self.flush()
-        self.con.write('PR DN\r\n')
         sleep(0.1)
+        self.con.write('PR DN\r\n')
+        sleep(0.2)
         # the name returns like: '"Name"\r\n'
-        pat = '\"\!|[A-Z]\"\r\n'
+        pat = '"[A-Z]"\r\n|"!"\r\n'
         DeviceName = self._loop_structure(pat)
-        self.DeviceName = DeviceName.strip('\n').strip('\r')
+        return DeviceName.strip('\n').strip('\r')
 
     def _loop_structure(self, pat):
         sleep(0.1)
