@@ -8,11 +8,18 @@ class MotorTools(object):
     def __init__(self):
         self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.OriginPos = 0
+        self._CurrentStep = 0
         self.CurrentPos = 0
         self.choose_port()
         sleep(0.2)
         self.DeviceName = self._getDeviceName()
         self.MicroStep = self._get_ms()
+        self._steps_per_rev = {'256':51200,'128':25600,'64':12800,'32':6400,
+                                '16':3200,'8':1600,'4':800,'2':400,'1':200,
+                                '250':50000,'200':40000,'125':25000,'100':2000,
+                                '50':10000,'25':5000,'10':2000,'5':1000}
+        self._meters_per_rev = 0.005 
+        '''5mm per 1 full revolution '''
         self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
                        30:'Unknown label or user variable',
@@ -47,18 +54,24 @@ The port will /dev/ttyUSB[0-9].\n\n"""
             return
         self._set_var('P',pos)
         self.CurrentPos = pos
+    
+    def _calculate_pos(self):
+        self.CurrentPos +=  1/self._steps_per_rev[self.MicroStep] * self._meters_per_rev
+        '''position = X steps * 1 rev/Y steps * 5 mm/1 rev '''
 
     def _get_ms(self):
         self.flush()
+        sleep(0.1)
         self.con.write('PR MS\r\n')
+        sleep(0.1)
         pat = '[0-9]+\r\n'
         ms = self._loop_structure(pat)
 
         return  int(ms.strip('\n').strip('\r'))
 
-    def _get_position(self):
+    def _get_current_step(self):
         self.flush()
-        self.con.write('PR P\r\n')
+        self.con.write('PR P\r\n')# tis P is really the step
         pat = '\-*[0-9]+\r\n'
         output = self._loop_structure(pat)
 
@@ -69,7 +82,8 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         sleep(0.1)
         self.write('MR %i' %x_dist)
         sleep(0.1)
-        self.CurrentPos = self._get_position()
+        self._CurrentStep = self._get_current_step()
+        self._calculate_pos()
         print "Moved: %(x_dist)s , New Pos: %(pos)s " %{'x_dist':x_dist,'pos':str(self.CurrentPos)}
             
     def write(self, arg, echk = False):
