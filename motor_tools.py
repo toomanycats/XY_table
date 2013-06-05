@@ -21,6 +21,7 @@ class MotorTools(object):
                                 '50':10000,'25':5000,'10':2000,'5':1000}
         self._meters_per_rev = 0.005 
         '''5mm per 1 full revolution '''
+        self._set_var('A',10)
         self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
                        30:'Unknown label or user variable',
@@ -80,14 +81,20 @@ The port will /dev/ttyUSB[0-9].\n\n"""
 
         return int(output.replace('\r\n',''))
 
-    def move_rel(self, x_dist):
+    def _calc_steps(self,linear_dist):
+        steps = float(linear_dist)/self._meters_per_rev * float((self._steps_per_rev[str(self.MicroStep)]))
+         
+        return int(round(steps)) 
+
+    def move_rel(self, linear_dist):
+        steps = self._calc_steps(linear_dist)
         self.flush()
         sleep(0.1)
-        self.write('MR %i' %x_dist)
+        self.write('MR %i' %steps)
         sleep(0.1)
         self._CurrentStep = self._get_current_step()
         self._calculate_pos()
-        print "Moved: %(x_dist)s , New Pos: %(pos)s " %{'x_dist':x_dist,'pos':str(self.CurrentPos)}
+        print "New Pos: %s " %str(self.CurrentPos)
             
     def write(self, arg, echk = False):
         self.con.write("%s\r\n" %arg)
