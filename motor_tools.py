@@ -8,6 +8,7 @@ class MotorTools(object):
 
     def __init__(self):
         self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
+        self._LIMIT_METERS = 0.5 # maximum travel in meters
         self.OriginPos = 0
         self._CurrentStep = 0
         self.CurrentPos = 0.0
@@ -57,11 +58,13 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         self._set_var('P',pos)
         self.CurrentPos = pos
     
-    def _calculate_pos(self):
+    def _calculate_pos(self, steps):
         '''Current step aggregates automatically. '''
-        CurrentPos =  self._CurrentStep * 1.0/float((self._steps_per_rev[str(self.MicroStep)])) * self._meters_per_rev
+        CurrentPos =  steps * 1.0/float((self._steps_per_rev[str(self.MicroStep)])) * self._meters_per_rev
         '''position = X steps * 1 rev/Y steps * 5 mm/1 rev '''
-        self.CurrentPos = CodeTools().ToSI(CurrentPos)
+
+        return CodeTools().ToSI(CurrentPos)
+
 
     def _get_ms(self):
         self.flush()
@@ -86,14 +89,24 @@ The port will /dev/ttyUSB[0-9].\n\n"""
          
         return int(round(steps)) 
 
+    def _check_limits(self, steps):
+         new_pos = self._calculate_pos(steps)
+         if new_pos >= self._LIMITS_METERS:
+             print "You have asked for a new position that will exceed the LIMIT variable. \n"
+             return True
+         else:
+             return False
+
     def move_rel(self, linear_dist):
         steps = self._calc_steps(linear_dist)
+        if self._check_limits(steps):# True is a fail on limits
+            break
         self.flush()
         sleep(0.1)
         self.write('MR %i' %steps)
         sleep(0.1)
         self._CurrentStep = self._get_current_step()
-        self._calculate_pos()
+        self.CurrentPos = self._calculate_pos(self.CurrentPos)
         print "New Pos: %s " %str(self.CurrentPos)
             
     def write(self, arg, echk = False):
