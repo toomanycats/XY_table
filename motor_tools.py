@@ -2,16 +2,17 @@ import serial
 import re
 from time import sleep
 import subprocess
-#testing branch changes and merge back to master
+from code_tools import CodeTools
+
 class MotorTools(object):
 
     def __init__(self):
         self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.OriginPos = 0
         self._CurrentStep = 0
-        self.CurrentPos = 0
+        self.CurrentPos = 0.0
         self.choose_port()
-        sleep(0.2)
+        sleep(2)
         self.DeviceName = self._getDeviceName()
         self.MicroStep = self._get_ms()
         self._steps_per_rev = {'256':51200,'128':25600,'64':12800,'32':6400,
@@ -56,8 +57,10 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         self.CurrentPos = pos
     
     def _calculate_pos(self):
-        self.CurrentPos +=  1/self._steps_per_rev[self.MicroStep] * self._meters_per_rev
+        '''Current step aggregates automatically. '''
+        CurrentPos =  self._CurrentStep * 1.0/float((self._steps_per_rev[str(self.MicroStep)])) * self._meters_per_rev
         '''position = X steps * 1 rev/Y steps * 5 mm/1 rev '''
+        self.CurrentPos = CodeTools().ToSI(CurrentPos)
 
     def _get_ms(self):
         self.flush()
