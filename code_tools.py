@@ -37,10 +37,10 @@ class CodeTools(object):
             return 0
 
         incPrefixes = ['k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
-        decPrefixes = ['m', 'mu', 'n', 'p', 'f', 'a', 'z', 'y']
+        decPrefixes = ['mm', 'mu', 'n', 'p', 'f', 'a', 'z', 'y']
 
         degree = int(math.floor(math.log10(math.fabs(d)) / 3))
-
+        
         prefix = ''
 
         if degree!=0:
