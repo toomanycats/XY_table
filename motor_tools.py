@@ -7,22 +7,24 @@ from code_tools import CodeTools
 class MotorTools(object):
 
     def __init__(self):
+        self.codetools = CodeTools()
         self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
-        self._LIMIT_METERS = 0.5 # maximum travel in meters
-        self.OriginPos = 0
-        self._CurrentStep = 0
+        self._LIMIT_METERS = 0.26 # maximum travel in meters
+        self.OriginPos = 0.0
         self.CurrentPos = 0.0
         self.choose_port()
         sleep(2)
         self.DeviceName = self._getDeviceName()
         self.MicroStep = self._get_ms()
+        self._set_var('P',0)
+        self._CurrentStep = 0
         self._steps_per_rev = {'256':51200,'128':25600,'64':12800,'32':6400,
                                 '16':3200,'8':1600,'4':800,'2':400,'1':200,
                                 '250':50000,'200':40000,'125':25000,'100':2000,
                                 '50':10000,'25':5000,'10':2000,'5':1000}
         self._meters_per_rev = 0.005 
         '''5mm per 1 full revolution '''
-        self._set_var('A',10)
+        self._set_var('A',51200)
         self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
                        30:'Unknown label or user variable',
@@ -51,20 +53,19 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         sleep(0.1)
         self.con.readlines()
 
-    def set_pos(self, pos):
-        if not isinstance(pos,int):
+    def set_step(self, step):
+        if not isinstance(step,int):
             print "Enter an integer only."
             return
-        self._set_var('P',pos)
-        self.CurrentPos = pos
+        self._set_var('P',step)
+        self.CurrentPos = self._calculate_pos(step)
     
     def _calculate_pos(self, steps):
         '''Current step aggregates automatically. '''
-        CurrentPos =  steps * 1.0/float((self._steps_per_rev[str(self.MicroStep)])) * self._meters_per_rev
+        CurrentPos =  steps * (1.0/(self._steps_per_rev[str(self.MicroStep)])) * self._meters_per_rev
         '''position = X steps * 1 rev/Y steps * 5 mm/1 rev '''
 
-        return CodeTools().ToSI(CurrentPos)
-
+        return CurrentPos  
 
     def _get_ms(self):
         self.flush()
@@ -81,8 +82,8 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         self.con.write('PR P\r\n')# tis P is really the step
         pat = '\-*[0-9]+\r\n'
         output = self._loop_structure(pat)
-
-        return int(output.replace('\r\n',''))
+        
+        return int(output.strip('\r\n'))
 
     def _calc_steps(self,linear_dist):
         steps = float(linear_dist)/self._meters_per_rev * float((self._steps_per_rev[str(self.MicroStep)]))
@@ -90,24 +91,38 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         return int(round(steps)) 
 
     def _check_limits(self, steps):
-         new_pos = self._calculate_pos(steps)
-         if new_pos >= self._LIMITS_METERS:
+         new_pos = self.CurrentPos + self._calculate_pos(steps)
+         if new_pos >= self._LIMIT_METERS:
              print "You have asked for a new position that will exceed the LIMIT variable. \n"
              return True
          else:
              return False
+  
+    def _query_pos(self, target):
+        Flag = False
+        while Flag == False:
+            current_step = self._get_current_step()
+            sleep(0.15)
+            current_pos = float(self._calculate_pos(current_step))
+            #print current_pos
+            sleep(0.15)
+            if current_pos == target:
+                Flag = True
 
     def move_rel(self, linear_dist):
         steps = self._calc_steps(linear_dist)
+        #print "steps: %i " %steps ;print "\n"
         if self._check_limits(steps):# True is a fail on limits
-            break
+            print "Attemping to move outside limits \n"
+            return
         self.flush()
         sleep(0.1)
         self.write('MR %i' %steps)
-        sleep(0.1)
+        self._query_pos(linear_dist + self.CurrentPos)
         self._CurrentStep = self._get_current_step()
-        self.CurrentPos = self._calculate_pos(self.CurrentPos)
-        print "New Pos: %s " %str(self.CurrentPos)
+        self.CurrentPos = float(self._calculate_pos(self._CurrentStep))
+        print "New Pos: %s " %self.codetools.ToSI(self.CurrentPos)
+        
             
     def write(self, arg, echk = False):
         self.con.write("%s\r\n" %arg)
@@ -189,6 +204,9 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         self.write('FD')
         sleep(3)
         self._send_control_C()
+        self._CurrentStep = 0
+        self.CurrentPos = 0
+           
 
     def _send_control_C(self):
         self.write('\03')
