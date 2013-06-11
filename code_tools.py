@@ -2,8 +2,18 @@ import math
 import smtplib
 from email.mime.text import MIMEText
 
-class CodeTools(object):
+class ConfigureDataSet(object):
+    def __init__(self):
+            self.DirectoryName = None
+            self.FreqRange = None
+            self.TestSet = 'S21' #transmition always for this experiment
+            
+    def _set_data_storage_path(self):
+        pass
 
+class CodeTools(object):
+    '''Contains methods used for the combination of motor tools and vna tools '''    
+    
     def _notify_admin_error(self, username, date, traceback):
 
         email_body = """
