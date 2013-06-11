@@ -9,7 +9,7 @@ import sys
 import getpass
 import traceback
 
-class TakeData:
+class VnaTools:
     def __init__(self):
         self.username = getpass.getuser()
         self._open_con()
