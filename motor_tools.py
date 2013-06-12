@@ -66,9 +66,9 @@ class Motor(Connection):
         self._LIMIT_METERS = 0.26 # maximum travel in meters
         self.OriginPos = 0.0
         self.CurrentPos = 0.0
-        #self.MicroStep = self._get_ms()
-        #self._set_var('P',0)
-        #self._set_var('A',51200)
+        self.MicroStep = self._get_ms()
+        self._set_var('P',0)
+        self._set_var('A',51200)
         self._CurrentStep = 0
         self._steps_per_rev =  {'256':51200,'128':25600,'64':12800,'32':6400,
                                 '16':3200,'8':1600,'4':800,'2':400,'1':200,
