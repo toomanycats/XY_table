@@ -6,27 +6,26 @@ from code_tools import CodeTools
 
 class Connection(object):
     def __init__(self):
-        Connection.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
-        self._choose_port()
+        self.serial_con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         
     def _get_sn(self):
-        Connection.con.write('PR SN\r\n')
+        self.serial_con.write('PR SN\r\n')
         pat = '[0-9]{9}\r\n'
-        out = Motor._loop_structure(pat)
+        out = self._loop_structure(pat)
         out = out.replace('\r\n','')
         return out
      
-    def _choose_port(self):
+    def set_port(self):
         ports = self._inspect_port_log()
         for port in ports:
             try:
-                Connection.con.port = '/dev/ttyUSB%s' %port
-                Connection.con.open()
+                self.serial_con.port = '/dev/ttyUSB%s' %port
+                self.serial_con.open()
                 sn = self._get_sn()
                 if sn == '269120375':
-                    self.y_port = Connection.con.port
+                    self.y_port = self.serial_con.port
                 elif sn == '074130197':
-                    self.x_port = Connection.con.port         
+                    self.x_port = self.serial_con.port         
             except serial.SerialException:
                 print "Not a connected port, trying next.\n"
 
@@ -39,18 +38,26 @@ class Connection(object):
             print "Error in calling bash for port info: %s" %error
         return output.split() #turn string into list
 
+    def _loop_structure(self, pat):
+        sleep(0.1)
+        re_obj = re.compile(pat)
+        readback = self.serial_con.readlines()
+        for item in readback:
+            if re_obj.match(item) is not None:
+                return item
+        return "unknown"
+
 class Motor(Connection):
     
     def __init__(self):
+        self.con = Connection().serial_con
         self.codetools = CodeTools()
-        #Connection.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self._LIMIT_METERS = 0.26 # maximum travel in meters
         self.OriginPos = 0.0
         self.CurrentPos = 0.0
-        #sleep(2)
-        #self.DeviceName = self._getDeviceName()
-        self.MicroStep = self._get_ms()
-        self._set_var('P',0)
+        #self.MicroStep = self._get_ms()
+        #self._set_var('P',0)
+        #self._set_var('A',51200)
         self._CurrentStep = 0
         self._steps_per_rev = {'256':51200,'128':25600,'64':12800,'32':6400,
                                 '16':3200,'8':1600,'4':800,'2':400,'1':200,
@@ -58,7 +65,6 @@ class Motor(Connection):
                                 '50':10000,'25':5000,'10':2000,'5':1000}
         self._meters_per_rev = 0.005 
         '''5mm per 1 full revolution '''
-        self._set_var('A',51200)
         self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
                        30:'Unknown label or user variable',
@@ -71,7 +77,7 @@ class Motor(Connection):
         sleep(0.1)
         self.write('PR EF')
         sleep(0.1)
-        Connection.con.readlines()
+        self.con.readlines()
 
     def set_step(self, step):
         if not isinstance(step,int):
@@ -90,7 +96,7 @@ class Motor(Connection):
     def _get_ms(self):
         self.flush()
         sleep(0.1)
-        Connection.con.write('PR MS\r\n')
+        self.con.write('PR MS\r\n')
         sleep(0.1)
         pat = '[0-9]+\r\n'
         ms = self._loop_structure(pat)
@@ -99,7 +105,7 @@ class Motor(Connection):
 
     def _get_current_step(self):
         self.flush()
-        Connection.con.write('PR P\r\n')# tis P is really the step
+        self.con.write('PR P\r\n')# tis P is really the step
         pat = '\-*[0-9]+\r\n'
         output = self._loop_structure(pat)
         
@@ -144,16 +150,16 @@ class Motor(Connection):
         print "New Pos: %s " %self.codetools.ToSI(self.CurrentPos)
                   
     def write(self, arg, echk = False):
-        Connection.con.write("%s\r\n" %arg)
+        self.con.write("%s\r\n" %arg)
         sleep(0.1)
-        list = Connection.con.readlines()
+        list = self.con.readlines()
         print list
         if echk == True:
             self._check_for_mcode_error()
 
     def _set_var(self, var, val, echk = False):
         string = '\r%(var)s=%(val)s\r' %{'var':var,'val':val}
-        Connection.con.write(string)
+        self.con.write(string)
         sleep(0.1)
         if echk == True:
             self._check_for_mcode_error()
@@ -175,9 +181,9 @@ class Motor(Connection):
         self.DeviceName = self._getDeviceName()
 
     def flush(self):
-        Connection.con.flushInput()
+        self.con.flushInput()
         sleep(0.2)
-        Connection.con.flushOutput()
+        self.con.flushOutput()
         sleep(0.2)
 
     def _check_for_mcode_error(self):
@@ -187,8 +193,8 @@ class Motor(Connection):
             self._get_error_code()
 
     def _get_error_code(self):
-        Connection.con.flushOutput()
-        Connection.con.write('PR ER\r\n')
+        self.con.flushOutput()
+        self.con.write('PR ER\r\n')
         pat = '[0-9]+\r\n'
         error_code = self._loop_structure(pat)
         error_code = int(error_code.replace('\r\n',''))
@@ -200,18 +206,17 @@ class Motor(Connection):
     def _getDeviceName(self):
         self.flush()
         sleep(0.1)
-        Connection.con.write('PR DN\r\n')
+        self.con.write('PR DN\r\n')
         sleep(0.2)
         # the name returns like: '"Name"\r\n'
         pat = '"[A-Z]"\r\n|"!"\r\n'
         DeviceName = self._loop_structure(pat)
         return DeviceName.strip('\n').strip('\r')
 
-    @classmethod
     def _loop_structure(self, pat):
         sleep(0.1)
         re_obj = re.compile(pat)
-        readback = Connection.con.readlines()
+        readback = self.con.readlines()
         for item in readback:
             if re_obj.match(item) is not None:
                 return item
@@ -230,11 +235,11 @@ class Motor(Connection):
     def _send_control_C(self):
         self.write('\03')
         sleep(2)
-        print Connection.con.readlines()
+        print self.con.readlines()
 
     def close(self):
-        Connection.con.close()
-        bool = Connection.con.isOpen()
+        self.con.close()
+        bool = self.con.isOpen()
         if bool is False:
             print "Motor port closed"
         else:
