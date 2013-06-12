@@ -4,17 +4,51 @@ from time import sleep
 import subprocess
 from code_tools import CodeTools
 
-class MotorTools(object):
+class Connection(object):
+    def __init__(self):
+        Connection.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
+        self._choose_port()
+        
+    def _get_sn(self):
+        Connection.con.write('PR SN\r\n')
+        pat = '[0-9]{9}\r\n'
+        out = Motor._loop_structure(pat)
+        out = out.replace('\r\n','')
+        return out
+     
+    def _choose_port(self):
+        ports = self._inspect_port_log()
+        for port in ports:
+            try:
+                Connection.con.port = '/dev/ttyUSB%s' %port
+                Connection.con.open()
+                sn = self._get_sn()
+                if sn == '269120375':
+                    self.y_port = Connection.con.port
+                elif sn == '074130197':
+                    self.x_port = Connection.con.port         
+            except serial.SerialException:
+                print "Not a connected port, trying next.\n"
 
+    def _inspect_port_log(self):
+        '''for determing the ports of the serial-USB adaptors'''
+        cmd = '''dmesg | grep -w ".*cp210x.*attached.*" | grep -o "ttyUSB[0-9]" | grep -o [0-9]'''
+        p = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (output, error) = p.communicate()
+        if error:
+            print "Error in calling bash for port info: %s" %error
+        return output.split() #turn string into list
+
+class Motor(Connection):
+    
     def __init__(self):
         self.codetools = CodeTools()
-        self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
+        #Connection.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self._LIMIT_METERS = 0.26 # maximum travel in meters
         self.OriginPos = 0.0
         self.CurrentPos = 0.0
-        self.choose_port()
-        sleep(2)
-        self.DeviceName = self._getDeviceName()
+        #sleep(2)
+        #self.DeviceName = self._getDeviceName()
         self.MicroStep = self._get_ms()
         self._set_var('P',0)
         self._CurrentStep = 0
@@ -30,28 +64,14 @@ class MotorTools(object):
                        30:'Unknown label or user variable',
                        24:'Illegal data entered'
                         }
-        
-    def choose_port(self):
-        print """The device log will now be printed for you to inspect and choose the port.
-The port will /dev/ttyUSB[0-9].\n\n"""
-        self._inspect_port_log()
-        motor_port = raw_input('Enter the numerical portion of the port,i.e. 0,1,2 etc.\n\n')
-        self.con.port = '/dev/ttyUSB%s' %motor_port
-        try:
-            self.con.open()
-        except serial.SerialException:
-            print "Connection to motor unsuccessful.\n"
-                
-        if self.con.isOpen():
-            print "Connection to motor successful on port %s \n" %self.con.port
-  
+    
     def clear_error(self):
         print "clearing errors \n"
         self.write('PR ER')
         sleep(0.1)
         self.write('PR EF')
         sleep(0.1)
-        self.con.readlines()
+        Connection.con.readlines()
 
     def set_step(self, step):
         if not isinstance(step,int):
@@ -70,7 +90,7 @@ The port will /dev/ttyUSB[0-9].\n\n"""
     def _get_ms(self):
         self.flush()
         sleep(0.1)
-        self.con.write('PR MS\r\n')
+        Connection.con.write('PR MS\r\n')
         sleep(0.1)
         pat = '[0-9]+\r\n'
         ms = self._loop_structure(pat)
@@ -79,7 +99,7 @@ The port will /dev/ttyUSB[0-9].\n\n"""
 
     def _get_current_step(self):
         self.flush()
-        self.con.write('PR P\r\n')# tis P is really the step
+        Connection.con.write('PR P\r\n')# tis P is really the step
         pat = '\-*[0-9]+\r\n'
         output = self._loop_structure(pat)
         
@@ -122,19 +142,18 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         self._CurrentStep = self._get_current_step()
         self.CurrentPos = float(self._calculate_pos(self._CurrentStep))
         print "New Pos: %s " %self.codetools.ToSI(self.CurrentPos)
-        
-            
+                  
     def write(self, arg, echk = False):
-        self.con.write("%s\r\n" %arg)
+        Connection.con.write("%s\r\n" %arg)
         sleep(0.1)
-        list = self.con.readlines()
+        list = Connection.con.readlines()
         print list
         if echk == True:
             self._check_for_mcode_error()
 
     def _set_var(self, var, val, echk = False):
         string = '\r%(var)s=%(val)s\r' %{'var':var,'val':val}
-        self.con.write(string)
+        Connection.con.write(string)
         sleep(0.1)
         if echk == True:
             self._check_for_mcode_error()
@@ -156,9 +175,9 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         self.DeviceName = self._getDeviceName()
 
     def flush(self):
-        self.con.flushInput()
+        Connection.con.flushInput()
         sleep(0.2)
-        self.con.flushOutput()
+        Connection.con.flushOutput()
         sleep(0.2)
 
     def _check_for_mcode_error(self):
@@ -168,8 +187,8 @@ The port will /dev/ttyUSB[0-9].\n\n"""
             self._get_error_code()
 
     def _get_error_code(self):
-        self.con.flushOutput()
-        self.con.write('PR ER\r\n')
+        Connection.con.flushOutput()
+        Connection.con.write('PR ER\r\n')
         pat = '[0-9]+\r\n'
         error_code = self._loop_structure(pat)
         error_code = int(error_code.replace('\r\n',''))
@@ -181,17 +200,18 @@ The port will /dev/ttyUSB[0-9].\n\n"""
     def _getDeviceName(self):
         self.flush()
         sleep(0.1)
-        self.con.write('PR DN\r\n')
+        Connection.con.write('PR DN\r\n')
         sleep(0.2)
         # the name returns like: '"Name"\r\n'
         pat = '"[A-Z]"\r\n|"!"\r\n'
         DeviceName = self._loop_structure(pat)
         return DeviceName.strip('\n').strip('\r')
 
+    @classmethod
     def _loop_structure(self, pat):
         sleep(0.1)
         re_obj = re.compile(pat)
-        readback = self.con.readlines()
+        readback = Connection.con.readlines()
         for item in readback:
             if re_obj.match(item) is not None:
                 return item
@@ -207,24 +227,14 @@ The port will /dev/ttyUSB[0-9].\n\n"""
         self._CurrentStep = 0
         self.CurrentPos = 0
            
-
     def _send_control_C(self):
         self.write('\03')
         sleep(2)
-        print self.con.readlines()
-
-    def _inspect_port_log(self):
-        '''for determing the ports of the serial-USB adaptors'''
-        cmd = '''dmesg | grep -G ".*cp210x.*attached.*" | grep ".*ttyUSB*" | tail -5'''
-        p = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (output, error) = p.communicate()
-        if error:
-            print "Error in calling bash for port info: %s" %error
-        print output + '\n' 
+        print Connection.con.readlines()
 
     def close(self):
-        self.con.close()
-        bool = self.con.isOpen()
+        Connection.con.close()
+        bool = Connection.con.isOpen()
         if bool is False:
             print "Motor port closed"
         else:
