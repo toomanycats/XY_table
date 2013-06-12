@@ -7,20 +7,26 @@ from code_tools import CodeTools
 class Connection(object):
     def __init__(self):
         self.serial_con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
+        self.x_port = None
+        self.y_port = None
+        sleep(0.3)
         
     def _get_sn(self):
         self.serial_con.write('PR SN\r\n')
+        sleep(0.2)
         pat = '[0-9]{9}\r\n'
         out = self._loop_structure(pat)
         out = out.replace('\r\n','')
         return out
      
     def set_port(self):
+        sleep(0.2)
         ports = self._inspect_port_log()
         for port in ports:
             try:
                 self.serial_con.port = '/dev/ttyUSB%s' %port
                 self.serial_con.open()
+                sleep(0.3)
                 sn = self._get_sn()
                 if sn == '269120375':
                     self.y_port = self.serial_con.port
@@ -28,7 +34,12 @@ class Connection(object):
                     self.x_port = self.serial_con.port         
             except serial.SerialException:
                 print "Not a connected port, trying next.\n"
-
+        if self.y_port is None:
+            raise Exception, "Y port not set. Could be a delay issue."
+        if self.x_port is None:
+           raise Exception, "X port not set, Could be a delay issue."      
+        sleep(1) 
+          
     def _inspect_port_log(self):
         '''for determing the ports of the serial-USB adaptors'''
         cmd = '''dmesg | grep -w ".*cp210x.*attached.*" | grep -o "ttyUSB[0-9]" | grep -o [0-9]'''
@@ -59,7 +70,7 @@ class Motor(Connection):
         #self._set_var('P',0)
         #self._set_var('A',51200)
         self._CurrentStep = 0
-        self._steps_per_rev = {'256':51200,'128':25600,'64':12800,'32':6400,
+        self._steps_per_rev =  {'256':51200,'128':25600,'64':12800,'32':6400,
                                 '16':3200,'8':1600,'4':800,'2':400,'1':200,
                                 '250':50000,'200':40000,'125':25000,'100':2000,
                                 '50':10000,'25':5000,'10':2000,'5':1000}
@@ -182,9 +193,9 @@ class Motor(Connection):
 
     def flush(self):
         self.con.flushInput()
-        sleep(0.2)
+        sleep(0.1)
         self.con.flushOutput()
-        sleep(0.2)
+        sleep(0.1)
 
     def _check_for_mcode_error(self):
         pat = '.*\?.*'
@@ -238,9 +249,14 @@ class Motor(Connection):
         print self.con.readlines()
 
     def close(self):
+        sleep(0.1)
         self.con.close()
         bool = self.con.isOpen()
         if bool is False:
             print "Motor port closed"
         else:
             print "Closing motor failed, still connected"
+            
+    def open(self):
+        sleep(0.3)
+        self.con.open()            

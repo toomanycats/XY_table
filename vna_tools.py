@@ -10,10 +10,12 @@ import getpass
 import traceback
 
 class VnaTools:
-    def __init__(self):
+    def __init__(self, Config):
         self.username = getpass.getuser()
         self._open_con()
-        
+        # take all setup code out of here and make a setup class
+        self.freqstart = Config.FreqStart
+        self.freqstop =  Config.FreqStop
         self.AGAIN = True
         self.plot_type = 'logmag'
         self.plot_bool = False
@@ -31,7 +33,7 @@ class VnaTools:
         g.clear(16)
         time.sleep(0.5)
 
-    def main(self):
+    def main(self):# only for guidance
         self.check_parameters()
         self.check_cal()
         self.setup()
@@ -78,37 +80,7 @@ class VnaTools:
             mp.plot(self.freq, self.phi)
             mp.title(self.titlestr)
             mp.ylabel(self.ystr + " phase (radians)")
-             
-    def setup(self):
-        #self.AGAIN='y'
-        #self.DONTOVERWRITE='y'
-        #self.PREVFILENAME="*example* DM_000"
- 
-        #User chooses a folder particular to this data set.
-        self.datasetname = raw_input("\nEnter a folder name for this data set (eg. HPUS2TM0717): ")
-       
-        self.directory = os.path.join("/media/Data/", self.datasetname)
-        if not os.path.exists(self.directory):
-             #make directory and set appropriate permissions.
-             os.makedirs(self.directory)
-             #os.system('chown :gpib '+directory) ## S bit on group for /media/Data does this for us (2744)
-             #os.system('chmod g+wx '+directory) ## allows group members to add to an existing data file made by another user and x is for cd-ing to it
-        else:
-             self.DONTOVERWRITE=raw_input("Folder name already exists! Are you sure you want to save files in this folder? Files could be overwritten? (y/n): ")
-             if self.DONTOVERWRITE!='y':
-                 print "Enter a new name for the folder \n"
-                 self.setup()
-                 #g.close(16)
-                 #sys.exit("Goodbye")         
-         
-        #User must manually enter freq range
-        freqstart = raw_input("Enter the start frequency (GHz): ")
-        freqstop = raw_input("Enter the stop frequency (GHz): ")
-        self.freqstart = float(freqstart)
-        self.freqstop = float(freqstop)
         
-        self.verify_continue()
- 
     def check_parameters(self):
         #Checks the parameter setting.
         g.write(16, "PARA?")
@@ -142,18 +114,6 @@ class VnaTools:
         else:
              print "You are under CAL set " + self.cals
              self.calsstring = "CAL" + self.cals
-
-    def verify_continue(self):
-        #Verify settings with user before continuing.
-        checksetup = raw_input("Are you sure you want to continue with these settings?(y/n): ")
-        if checksetup != 'y' and checksetup != 'n':
-            print "\n %s: ***You did not enter a valid choice*** \n" %checksetup
-            self.verify_continue()
-        elif checksetup == 'n':
-            g.close(16)
-            sys.exit("Goodbye")
-        elif checksetup == 'y':
-            print "Settings verified and continuing with Take Data."
 
     def record_data(self):
         #The following loop is repeated for every single data run.
@@ -269,17 +229,7 @@ class VnaTools:
             pausescript = raw_input("Okay. Press the LOCAL button and change any settings you want. Hit enter here when you're done.")
             #Reconnect and check the settings. ASSUMES FREQ RANGE IS UNCHANGED.
         self._open_con()          
-    
-    def get_fileowner(self):
-        p = os.popen("ls -l " + self.fullpath + ".mat")
-        fileowner = p.readline()
-        p.close
-        self.fileowner = fileowner[13:13 + len(usersname)]
-        
-    def _get_date(self):
-        datestr = datetime.datetime.now()
-        self.date_str = str(datestr)[0:19] #Cuts off the milliseconds for a simpler output.
-        
+            
     def prompt_user_for_plot(self):
         plot_bool = raw_input("Do you wish to plot this data run? y/n: ")
         plot_bool = plot_bool.capitalize()

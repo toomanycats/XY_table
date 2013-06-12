@@ -5,11 +5,57 @@ from email.mime.text import MIMEText
 class ConfigureDataSet(object):
     def __init__(self):
             self.DirectoryName = None
-            self.FreqRange = None
+            self.FreqStart = None
+            self.FreqStop = None
             self.TestSet = 'S21' #transmition always for this experiment
-            
-    def _set_data_storage_path(self):
-        pass
+ 
+    def setup(self):
+        #User chooses a folder particular to this data set.
+        datasetname = raw_input("\nEnter a folder name for this data set:")
+       
+        self.DirectoryName = os.path.join("/media/Data/XY_table", datasetname)
+        if not os.path.exists(self.DirectoryName):
+             #make directory and set appropriate permissions.
+             os.makedirs(self.DirectoryName)
+             #os.system('chown :gpib '+directory) ## S bit on group for /media/Data does this for us (2744)
+             #os.system('chmod g+wx '+directory) ## allows group members to add to an existing data file made by another user and x is for cd-ing to it
+        else:
+             self.DONTOVERWRITE=raw_input("Folder name already exists! Are you sure you want to save files in this folder? Files could be overwritten? (y/n): ")
+             if self.DONTOVERWRITE!='y':
+                 print "Enter a new name for the folder \n"
+                 self.setup()
+                 #g.close(16)
+                 #sys.exit("Goodbye")         
+         
+        #User must manually enter freq range
+        freqstart = raw_input("Enter the start frequency (GHz): ")
+        freqstop = raw_input("Enter the stop frequency (GHz): ")
+        self.FreqStart = float(freqstart)
+        self.FreqStop = float(freqstop)
+        
+        self.verify_continue()
+
+    def verify_continue(self):
+        #Verify settings with user before continuing.
+        checksetup = raw_input("Are you sure you want to continue with these settings?(y/n): ")
+        if checksetup != 'y' and checksetup != 'n':
+            print "\n %s: ***You did not enter a valid choice*** \n" %checksetup
+            self.verify_continue()
+        elif checksetup == 'n':
+            g.close(16)
+            sys.exit("Goodbye")
+        elif checksetup == 'y':
+            print "Settings verified and continuing with Take Data."
+
+    def get_fileowner(self):
+        p = os.popen("ls -l " + self.fullpath + ".mat")
+        fileowner = p.readline()
+        p.close
+        self.fileowner = fileowner[13:13 + len(usersname)]
+        
+    def _get_date(self):
+        datestr = datetime.datetime.now()
+        self.date_str = str(datestr)[0:19] #Cuts off the milliseconds for a simpler output.        
 
 class CodeTools(object):
     '''Contains methods used for the combination of motor tools and vna tools '''    
