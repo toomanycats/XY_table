@@ -116,7 +116,7 @@ class Motor(Connection):
 
     def _get_current_step(self):
         self.flush()
-        self.con.write('PR P\r\n')# tis P is really the step
+        self.con.write('PR P\r\n')# P is really the step
         pat = '\-*[0-9]+\r\n'
         output = self._loop_structure(pat)
         
@@ -138,12 +138,15 @@ class Motor(Connection):
     def _query_pos(self, target):
         Flag = False
         while Flag == False:
+            sleep(0.10)
             current_step = self._get_current_step()
-            sleep(0.15)
+            sleep(0.10)
             current_pos = float(self._calculate_pos(current_step))
             #print current_pos
-            sleep(0.15)
-            if current_pos == target:
+            self.con.write('PR ER\r\n')#check if reached limit switch
+            pat = '83\r\n|84\r\n'
+            error_status = self._loop_structure(pat)
+            if current_pos == target or error_status == '83\r\n':
                 Flag = True
 
     def move_rel(self, linear_dist):
@@ -152,7 +155,7 @@ class Motor(Connection):
         if self._check_limits(steps):# True is a fail on limits
             print "Attemping to move outside limits \n"
             return
-        self.flush()
+        #self.flush()
         sleep(0.1)
         self.write('MR %i' %steps)
         self._query_pos(linear_dist + self.CurrentPos)
@@ -234,8 +237,11 @@ class Motor(Connection):
         return "unknown"
 
     def reset(self):
+        sleep(0.1)
         self.flush()
+        sleep(0.1)
         self.clear_error()
+        sleep(0.1)
         print "Returning to factory defaults and rebooting motor.\n"
         self.write('FD')
         sleep(3)

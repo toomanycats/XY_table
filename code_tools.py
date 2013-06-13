@@ -8,6 +8,8 @@ class ConfigureDataSet(object):
             self.FreqStart = None
             self.FreqStop = None
             self.TestSet = 'S21' #transmition always for this experiment
+            self.Origin = None
+            '''Where the origin of the crystal is located '''
  
     def setup(self):
         #User chooses a folder particular to this data set.
