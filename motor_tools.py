@@ -11,6 +11,13 @@ class Connection(object):
         self.y_port = None
         sleep(0.3)
         
+    def _uniq(self,input):
+        output = []
+        for x in input:
+            if x not in output:
+                output.append(x)
+        return output
+    
     def _get_sn(self):
         self.serial_con.write('PR SN\r\n')
         sleep(0.2)
@@ -21,19 +28,24 @@ class Connection(object):
      
     def set_port(self):
         sleep(0.2)
-        ports = self._inspect_port_log()
-        for port in ports:
+        port_list = self._inspect_port_log()
+        unique_ports = self._uniq(port_list)
+        for port in unique_ports:
             try:
+                if self.x_port is not None and self.y_port is not None:
+                    break     
                 self.serial_con.port = '/dev/ttyUSB%s' %port
                 self.serial_con.open()
                 sleep(0.3)
                 sn = self._get_sn()
-                if sn == '269120375':
+                if sn == '269120375' and self.y_port is None:
                     self.y_port = self.serial_con.port
-                elif sn == '074130197':
-                    self.x_port = self.serial_con.port         
+                    self.serial_con.close()
+                elif sn == '074130197' and self.x_port is None:
+                    self.x_port = self.serial_con.port  
+                    self.serial_con.close()      
             except serial.SerialException:
-                print "Not a connected port, trying next.\n"
+                print "%s is not a connected port, trying next.\n" %self.serial_con.port
         if self.y_port is None:
             raise Exception, "Y port not set. Could be a delay issue."
         if self.x_port is None:
@@ -61,14 +73,11 @@ class Connection(object):
 class Motor(Connection):
     
     def __init__(self):
+        #self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.con = Connection().serial_con
         self.codetools = CodeTools()
         self._LIMIT_METERS = 0.26 # maximum travel in meters
-        self.OriginPos = 0.0
         self.CurrentPos = 0.0
-        self.MicroStep = self._get_ms()
-        self._set_var('P',0)
-        self._set_var('A',51200)
         self._CurrentStep = 0
         self._steps_per_rev =  {'256':51200,'128':25600,'64':12800,'32':6400,
                                 '16':3200,'8':1600,'4':800,'2':400,'1':200,
