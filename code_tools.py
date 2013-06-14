@@ -1,33 +1,6 @@
 import math
 import smtplib
 from email.mime.text import MIMEText
-import motor_tools
-
-class Main(object):
-    def __init__(self):
-        
-        Con = motor_tools.Connection()
-        Con.set_port()
-        
-        self.mx = motor_tools.Motor()
-        self.mx.con.port = Con.x_port
-        self.mx.open()
-        self.mx.clear_error()
-        self.mx.MicroStep = self.mx._get_ms()
-        self.mx._set_var('S1','2,0,0')
-        self.mx._set_var('LM', 2)
-        self.mx._set_var('P',0)
-        self.mx._set_var('A',51200)
-        
-        self.my = motor_tools.Motor()
-        self.my.con.port = Con.y_port
-        self.my.open()
-        self.my.clear_error()
-        self.my.MicroStep = self.my._get_ms()
-        self.my._set_var('P',0)
-        self.my._set_var('A',51200)
-        self.my._set_var('S1','2,0,0')
-        self.my._set_var('LM', 2)
 
 class ConfigureDataSet(object):
     def __init__(self):
