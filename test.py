@@ -5,8 +5,8 @@ from vna_tools import VnaTools
 config = code_tools.ConfigureDataSet()
 
 config.DirectoryName = 'test'
-config.FreqStart = 10e9 
-config.FreqStop =  15e9
+config.FreqStart = None
+config.FreqStop =  None
 config.Origin = None
 
 Con = motor_tools.Connection()
@@ -21,7 +21,6 @@ mx._set_var('S1','2,0,0')
 mx._set_var('LM', 2)
 mx._set_var('P',0)
 mx._set_var('A',51200)
-
 
 my = motor_tools.Motor()
 my.con.port = Con.y_port

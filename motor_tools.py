@@ -73,7 +73,6 @@ class Connection(object):
 class Motor(Connection):
     
     def __init__(self):
-        #self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.con = Connection().serial_con
         self.codetools = CodeTools()
         self._LIMIT_METERS = 0.26 # maximum travel in meters
