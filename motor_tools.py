@@ -38,6 +38,7 @@ class Connection(object):
                 self.serial_con.open()
                 sleep(0.3)
                 sn = self._get_sn()
+                sleep(0.1)
                 if sn == '269120375' and self.y_port is None:
                     self.y_port = self.serial_con.port
                     self.serial_con.close()
