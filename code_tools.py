@@ -1,6 +1,7 @@
 import math
 import smtplib
 from email.mime.text import MIMEText
+import numpy as np
 
 class ConfigureDataSet(object):
     def __init__(self):
@@ -8,8 +9,14 @@ class ConfigureDataSet(object):
             self.FreqStart = None
             self.FreqStop = None
             self.TestSet = 'S21' #transmition always for this experiment
+            self.X_length = None
+            self.Y_length = None
+            self.X_res = None
+            self.Y_res = None
             self.Origin = None
             '''Where the origin of the crystal is located '''
+            self.Z_length = None
+            
  
     def setup(self):
         #User chooses a folder particular to this data set.
@@ -123,3 +130,20 @@ class CodeTools(object):
             s = "{d}".format(d=d)
 
         return(s)
+
+class ArrayTools(object):
+    def __init__(self):
+        pass 
+    
+    def make_3d_array(self, x_len, y_len, x_res, y_res, num_z_pts):
+        num_x_pts = int(np.ceil(x_len / x_res))
+        num_y_pts = int(np.ceil(y_len / y_res))
+        dim3_array = np.zeros((num_x_pts,num_y_pts), dtype=[('x_ind','i4'),('y_ind','i4'),('z_data','3c8')])
+        
+        for i in xrange(0,num_x_pts):
+            dim3_array[i,:]['x_ind'] = np.arange(0,num_x_pts)
+            
+        for i in xrange(0,num_y_pts):
+            dim3_array[:,i]['y_ind'] = np.arange(0,num_y_pts)
+        
+        return dim3_array

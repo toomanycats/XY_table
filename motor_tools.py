@@ -3,6 +3,7 @@ import re
 from time import sleep
 import subprocess
 from code_tools import CodeTools
+import code_tools
 
 class Connection(object):
     def __init__(self):
@@ -27,24 +28,29 @@ class Connection(object):
         return out
      
     def set_port(self):
-        sleep(0.2)
+        sleep(0.3)
         port_list = self._inspect_port_log()
+        sleep(0.3)
         unique_ports = self._uniq(port_list)
         for port in unique_ports:
             try:
                 if self.x_port is not None and self.y_port is not None:
                     break     
                 self.serial_con.port = '/dev/ttyUSB%s' %port
+                print self.serial_con.isOpen() 
+                print ''
                 self.serial_con.open()
                 sleep(0.3)
                 sn = self._get_sn()
-                sleep(0.1)
+                sleep(0.3)
                 if sn == '269120375' and self.y_port is None:
                     self.y_port = self.serial_con.port
                     self.serial_con.close()
+                    sleep(0.3)
                 elif sn == '074130197' and self.x_port is None:
                     self.x_port = self.serial_con.port  
-                    self.serial_con.close()      
+                    self.serial_con.close() 
+                    sleep(0.3)     
             except serial.SerialException:
                 print "%s is not a connected port, trying next.\n" %self.serial_con.port
         if self.y_port is None:
@@ -76,7 +82,7 @@ class Motor(Connection):
     def __init__(self):
         self.con = Connection().serial_con
         self.codetools = CodeTools()
-        self._LIMIT_METERS = 0.26 # maximum travel in meters
+        self._LIMIT_METERS = 0.1 # maximum travel in meters
         self.CurrentPos = 0.0
         self._CurrentStep = 0
         self._steps_per_rev =  {'256':51200,'128':25600,'64':12800,'32':6400,
@@ -147,15 +153,15 @@ class Motor(Connection):
     def _query_pos(self, target):
         Flag = False
         while Flag == False:
-            sleep(0.10)
             current_step = self._get_current_step()
-            sleep(0.10)
+            sleep(0.07)
             current_pos = float(self._calculate_pos(current_step))
             #print current_pos
             self.con.write('PR ER\r\n')#check if reached limit switch
+            sleep(0.07)
             pat = '83\r\n|84\r\n'
             error_status = self._loop_structure(pat)
-            if current_pos == target or error_status == '83\r\n':
+            if abs(current_pos - target) < 1e-6 or error_status == '83\r\n':
                 Flag = True
 
     def move_rel(self, linear_dist):
@@ -274,10 +280,21 @@ class Motor(Connection):
             
     def open(self):
         sleep(0.3)
-        self.con.open()            
+        self.con.open()
 
 class Main(object):
     def __init__(self):
+        
+        self.config = code_tools.ConfigureDataSet()
+        self.config.DirectoryName = 'Test'
+        self.config.FreqStart = 7e9
+        self.config.FreqStop = 15e9
+        self.config.TestSet = 'S21' #transmition always for this experiment
+        self.config.X_length = 0.05
+        self.config.Y_length = 0.05
+        self.config.X_res = 0.005
+        self.config.Y_res = 0.005
+        self.config.Origin = 0.0
         
         Con = Connection()
         Con.set_port()
@@ -301,3 +318,34 @@ class Main(object):
         self.my._set_var('A',51200)
         self.my._set_var('S1','2,0,0')
         self.my._set_var('LM', 2)
+        
+    def main(self):
+        self.dim3_array = code_tools.ArrayTools().make_3d_array(self.config.X_length, self.config.Y_length, 
+                                                     self.config.X_res,self.config.Y_res, self.config.Z_length)
+        self.loop_along_sample()
+        
+    def loop_along_sample(self):
+        for index_y in xrange(0,self.dim3_array.shape[1]):
+            for index_x in xrange(0,self.dim3_array.shape[0]):
+                #do take data
+                sleep(0.5)
+                self.mx.move_rel(self.config.X_res)
+            self.mx.move_rel(-1*self.config.X_length)      
+            self.my.move_rel(self.config.Y_res)   
+            sleep(0.5)
+        
+        
+               
+                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
