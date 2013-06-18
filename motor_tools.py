@@ -283,25 +283,16 @@ class Motor(Connection):
         self.con.open()
 
 class Main(object):
-    def __init__(self):
-        
-        self.config = code_tools.ConfigureDataSet()
-        self.config.DirectoryName = 'Test'
-        self.config.FreqStart = 7e9
-        self.config.FreqStop = 15e9
-        self.config.TestSet = 'S21' #transmition always for this experiment
-        self.config.X_length = 0.05
-        self.config.Y_length = 0.05
-        self.config.X_res = 0.005
-        self.config.Y_res = 0.005
-        self.config.Origin = 0.0
-        
+    def __init__(self, Config, dim3_array):
+        self.config = Config
+        self.dim3_array = dim3_array
         Con = Connection()
         Con.set_port()
         
         self.mx = Motor()
         self.mx.con.port = Con.x_port
         self.mx.open()
+        print "Connected to X motor on port %s \n" %self.mx.con.port
         self.mx.clear_error()
         self.mx.MicroStep = self.mx._get_ms()
         self.mx._set_var('S1','2,0,0')
@@ -312,6 +303,7 @@ class Main(object):
         self.my = Motor()
         self.my.con.port = Con.y_port
         self.my.open()
+        print "Connected to Y motor on port %s \n" %self.my.con.port
         self.my.clear_error()
         self.my.MicroStep = self.my._get_ms()
         self.my._set_var('P',0)
@@ -319,20 +311,7 @@ class Main(object):
         self.my._set_var('S1','2,0,0')
         self.my._set_var('LM', 2)
         
-    def main(self):
-        self.dim3_array = code_tools.ArrayTools().make_3d_array(self.config.X_length, self.config.Y_length, 
-                                                     self.config.X_res,self.config.Y_res, self.config.Z_length)
-        self.loop_along_sample()
-        
-    def loop_along_sample(self):
-        for index_y in xrange(0,self.dim3_array.shape[1]):
-            for index_x in xrange(0,self.dim3_array.shape[0]):
-                #do take data
-                sleep(0.5)
-                self.mx.move_rel(self.config.X_res)
-            self.mx.move_rel(-1*self.config.X_length)      
-            self.my.move_rel(self.config.Y_res)   
-            sleep(0.5)
+
         
         
                

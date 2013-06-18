@@ -2,20 +2,25 @@ import math
 import smtplib
 from email.mime.text import MIMEText
 import numpy as np
+from  getpass import getuser
+import datetime
 
 class ConfigureDataSet(object):
     def __init__(self):
-            self.DirectoryName = None
-            self.FreqStart = None
-            self.FreqStop = None
-            self.TestSet = 'S21' #transmition always for this experiment
-            self.X_length = None
-            self.Y_length = None
-            self.X_res = None
-            self.Y_res = None
-            self.Origin = None
-            '''Where the origin of the crystal is located '''
-            self.Z_length = None
+        self.username = getuser() 
+        self.date = datetime.datetime.now()   
+        self.DirectoryName = None
+        self.FileNamePrefix = None
+        self.FreqStart = None
+        self.FreqStop = None
+        self.TestSet = 'S21' #transmition always for this experiment
+        self.X_length = None
+        self.Y_length = None
+        self.X_res = None
+        self.Y_res = None
+        self.Origin = None
+        '''Where the origin of the crystal is located '''
+        self.Z_length = None
             
  
     def setup(self):
@@ -134,6 +139,20 @@ class CodeTools(object):
 class ArrayTools(object):
     def __init__(self):
         pass 
+
+    def get_magnitude(self, data):
+        self.trans_data = np.zeros(len_data)
+        for i in range(0,len_data):
+            trans_data[i] = np.sqrt(data[i,0]**2 + data[i,1]**2)
+
+        return trans_data 
+
+    def get_phase(self,data):
+        self.phi = np.zeros(len_data)
+        for i in range(0,len_data):
+            phase_data[i] = np.angle(complex(data_mat[i, 0],data_mat[i, 1]))
+
+        return phase_data
     
     def make_3d_array(self, x_len, y_len, x_res, y_res, num_z_pts):
         num_x_pts = int(np.ceil(x_len / x_res))
@@ -147,3 +166,57 @@ class ArrayTools(object):
             dim3_array[:,i]['y_ind'] = np.arange(0,num_y_pts)
         
         return dim3_array
+
+class PlotTools(object):
+    def __init__(self):
+        pass
+    
+    def _plot_data(self):
+        self._set_plot_type()
+        mp.ion() #Turns on interactive plot mode, which allows user to use the terminal without closing the plot.
+        #Get time and date for the plot title.
+        self.titlestr = self.directory + ".dat" + " " + self.calsstring + " " + self.param + " " + self.date_str
+        mp.clf()
+        mp.xlim( (self.freqstart, self.freqstop) )
+        mp.xlabel("Frequency (GHz)")        
+
+        if self.plot_type == 'logmag':
+            print "Plotting logmag."
+            #PLOT logaritmic transmission data. Labels graph with details of the data run.
+            logT = np.log10(self.trans_data) * 10
+            mp.plot(self.freq, logT)
+            mp.title(self.titlestr)
+            mp.ylabel(self.ystr + " (dB)")
+
+        elif self.plot_type == 'linmag':
+            print "Plotting linmag."
+            #PLOT linear transmission data.
+            mp.plot(self.freq, self.trans_data)
+            mp.title(self.titlestr)
+            mp.ylabel(self.ystr + " linear")
+     
+        elif self.plot_type == 'phase':
+            print "Plotting phase."
+            #PLOT phase data.
+            mp.plot(self.freq, self.phi)
+            mp.title(self.titlestr)
+            mp.ylabel(self.ystr + " phase (radians)")
+            
+    def prompt_user_for_plot(self):
+        plot_bool = raw_input("Do you wish to plot this data run? y/n: ")
+        plot_bool = plot_bool.capitalize()
+        if plot_bool == 'Y':
+            self._plot_data() 
+            
+    def _set_plot_type(self):
+        types = {'1':'logmag','2':'linmag','3':'phase'}
+        for key in types.iterkeys():
+            print "%(key)s  %(val)s" %{'key':key,'val':types[key]}
+        
+        choice = raw_input("Select the type of plot you want(num): ")
+        
+        try:
+            self.plot_type = types[choice]
+        finally:
+            pass            
+                
