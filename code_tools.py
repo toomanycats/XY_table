@@ -22,7 +22,6 @@ class ConfigureDataSet(object):
         '''Where the origin of the crystal is located '''
         self.Z_length = None
             
- 
     def setup(self):
         #User chooses a folder particular to this data set.
         datasetname = raw_input("\nEnter a folder name for this data set:")

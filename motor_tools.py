@@ -28,7 +28,6 @@ class Connection(object):
         return out
      
     def set_port(self):
-        sleep(0.3)
         port_list = self._inspect_port_log()
         sleep(0.3)
         unique_ports = self._uniq(port_list)
@@ -37,8 +36,8 @@ class Connection(object):
                 if self.x_port is not None and self.y_port is not None:
                     break     
                 self.serial_con.port = '/dev/ttyUSB%s' %port
-                print self.serial_con.isOpen() 
-                print ''
+                if self.serial_con.isOpen():
+                    self.serial_con.close() 
                 self.serial_con.open()
                 sleep(0.3)
                 sn = self._get_sn()
