@@ -84,7 +84,7 @@ class VnaTools(object):
        
         len_data = (len(data)) / 2 #This is how we figure out the number of freq pts.
          
-        self.data_mat = np.zeros((len_data,2))
+        self.data_mat = np.zeros((len_data,2), dtype=complex)
         #self.trans_data = np.zeros(len_data)
         #self.phi = np.zeros(len_data)
         x_axis = range(0,len_data)
@@ -118,8 +118,9 @@ class VnaTools(object):
                  singdone = stat_byte[2]
 
     def save_data(self, data_point):      
-        file = self.config.FileNamePrefix + '_' + str(data_point)
+        file = self.config.FileNamePrefix + '_' + str(data_point) + '.dat'
         fullpath = os.path.join(self.config.DirectoryName, file)
+        np.savetxt(fullpath, self.data_mat)
           
 #         headerstr = """%(path)s %(cal)s %(param)s %(date)s
 # """%{'path':self.fullpath + ".dat",'cal':self.calsstring,'param':self.param,'date':self.date_str}
@@ -132,7 +133,7 @@ class VnaTools(object):
 # %% %(freq_start)s : %(freq_stop)s GHz
 # ''' %{'headerstr':headerstr, 'freq_start':freq_start,'freq_stop':freq_stop}
 
-        np.savetxt(fullpath + ".dat", self.data_mat)
+#         np.savetxt(fullpath + ".dat", self.data_mat)
 #         f = open(self.fullpath + ".dat",'r')
 #         matrixstr = f.read()
 #         f.close()
@@ -141,7 +142,7 @@ class VnaTools(object):
 #         f.write(header_template + '\n\n' + matrixstr)
 #         f.close()
 
-        scipy.io.savemat(self.fullpath,mdict={self.filename : self.data_mat}) 
+#        scipy.io.savemat(self.fullpath,mdict={self.filename : self.data_mat}) 
     
         print "File Saved Successfully."
 
