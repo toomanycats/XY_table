@@ -61,7 +61,7 @@ class VnaTools(object):
              print "You are under CAL set " + self.cals
              self.calsstring = "CAL" + self.cals
 
-    def record_data(self):
+    def take_data(self):
         #The following loop is repeated for every single data run.
         #while (self.self.AGAIN=='y'):
         #Makes the setup take a single sweep of data.
@@ -82,26 +82,19 @@ class VnaTools(object):
         print "Number of floats read: " + str(len(data)) + "\n"
         #Should help let the user know things worked properly.
        
-        len_data = (len(data)) / 2 #This is how we figure out the number of freq pts.
-         
-        self.data_mat = np.zeros((len_data,2), dtype=complex)
-        #self.trans_data = np.zeros(len_data)
-        #self.phi = np.zeros(len_data)
-        x_axis = range(0,len_data)
-        Deltafreq = (self.freqstop - self.freqstart) / float(len_data)
-        self.freq = np.arange(self.freqstart, self.freqstop, Deltafreq)
-         
+        len_data = (len(data)) / 2 
+        data_mat = np.zeros((len_data,2), dtype=complex)
+    
         #Put data into a two column matrix. Also gets the magnitude and phase.
         for i in range(0,len_data):
             #self.data_mat[i,0] = data[2*i]
             #self.data_mat[i,1] = data[2*i+1]
-            self.data_mat[i] = np.complex(data[2*i],data[2*i+1])
+            data_mat[i] = np.complex(data[2*i],data[2*i+1])
 #           self.trans_data[i] = np.sqrt(self.data_mat[i,0]**2 + self.data_mat[i,1]**2)
 #           self.phi[i] = np.angle(complex(self.data_mat[i, 0], self.data_mat[i, 1]))
         
-        proc = os.popen("mplayer -really-quiet chime.wav > /dev/null 2>&1")
-        proc.close()
-        
+        return data_mat
+
     def status_byte(self):
          self.clear()
          #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
@@ -116,35 +109,6 @@ class VnaTools(object):
              #output: '0b10001' when complete
              if len(stat_byte) >= 7:
                  singdone = stat_byte[2]
-
-    def save_data(self, data_point):      
-        file = self.config.FileNamePrefix + '_' + str(data_point) + '.dat'
-        fullpath = os.path.join(self.config.DirectoryName, file)
-        np.savetxt(fullpath, self.data_mat)
-          
-#         headerstr = """%(path)s %(cal)s %(param)s %(date)s
-# """%{'path':self.fullpath + ".dat",'cal':self.calsstring,'param':self.param,'date':self.date_str}
-#         #save_ascii_data(mymatrix, headerstr, usersname, freqstart, freqstop, self.fullpath)
-#         freq_start = str(self.freqstart)
-#         freq_stop = str(self.freqstop)
-# 
-#         header_template = '''
-# %% %(headerstr)s
-# %% %(freq_start)s : %(freq_stop)s GHz
-# ''' %{'headerstr':headerstr, 'freq_start':freq_start,'freq_stop':freq_stop}
-
-#         np.savetxt(fullpath + ".dat", self.data_mat)
-#         f = open(self.fullpath + ".dat",'r')
-#         matrixstr = f.read()
-#         f.close()
-#     
-#         f = open(self.fullpath + ".dat",'w')
-#         f.write(header_template + '\n\n' + matrixstr)
-#         f.close()
-
-#        scipy.io.savemat(self.fullpath,mdict={self.filename : self.data_mat}) 
-    
-        print "File Saved Successfully."
 
     def _make_changes(self):
         manualchanges = raw_input("Do you want a break to change some settings manually? (y/n): ")

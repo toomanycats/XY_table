@@ -282,9 +282,8 @@ class Motor(Connection):
         self.con.open()
 
 class Main(object):
-    def __init__(self, Config, dim3_array):
+    def __init__(self, Config):
         self.config = Config
-        self.dim3_array = dim3_array
         Con = Connection()
         Con.set_port()
         

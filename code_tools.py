@@ -4,71 +4,25 @@ from email.mime.text import MIMEText
 import numpy as np
 from  getpass import getuser
 import datetime
+import numpy as np
+from os import path
 
 class ConfigureDataSet(object):
     def __init__(self):
-        self.username = getuser() 
-        self.date = datetime.datetime.now()   
+        self.Username = getuser() 
+        self.Date = datetime.datetime.now()   
         self.DirectoryName = None
         self.FileNamePrefix = None
         self.FreqStart = None
         self.FreqStop = None
+        self.FreqRes = None
         self.TestSet = 'S21' #transmition always for this experiment
         self.X_length = None
         self.Y_length = None
         self.X_res = None
         self.Y_res = None
         self.Origin = None
-        '''Where the origin of the crystal is located '''
-        self.Z_length = None
-            
-    def setup(self):
-        #User chooses a folder particular to this data set.
-        datasetname = raw_input("\nEnter a folder name for this data set:")
-       
-        self.DirectoryName = os.path.join("/media/Data/XY_table", datasetname)
-        if not os.path.exists(self.DirectoryName):
-             #make directory and set appropriate permissions.
-             os.makedirs(self.DirectoryName)
-             #os.system('chown :gpib '+directory) ## S bit on group for /media/Data does this for us (2744)
-             #os.system('chmod g+wx '+directory) ## allows group members to add to an existing data file made by another user and x is for cd-ing to it
-        else:
-             self.DONTOVERWRITE=raw_input("Folder name already exists! Are you sure you want to save files in this folder? Files could be overwritten? (y/n): ")
-             if self.DONTOVERWRITE!='y':
-                 print "Enter a new name for the folder \n"
-                 self.setup()
-                 #g.close(16)
-                 #sys.exit("Goodbye")         
-         
-        #User must manually enter freq range
-        freqstart = raw_input("Enter the start frequency (GHz): ")
-        freqstop = raw_input("Enter the stop frequency (GHz): ")
-        self.FreqStart = float(freqstart)
-        self.FreqStop = float(freqstop)
-        
-        self.verify_continue()
-
-    def verify_continue(self):
-        #Verify settings with user before continuing.
-        checksetup = raw_input("Are you sure you want to continue with these settings?(y/n): ")
-        if checksetup != 'y' and checksetup != 'n':
-            print "\n %s: ***You did not enter a valid choice*** \n" %checksetup
-            self.verify_continue()
-        elif checksetup == 'n':
-            g.close(16)
-            sys.exit("Goodbye")
-        elif checksetup == 'y':
-            print "Settings verified and continuing with Take Data."
-
-    def get_fileowner(self):
-        p = os.popen("ls -l " + self.fullpath + ".mat")
-        fileowner = p.readline()
-        p.close
-        self.fileowner = fileowner[13:13 + len(usersname)]
-        
-    def _get_date(self):
-        datestr = datetime.datetime.now()
-        self.date_str = str(datestr)[0:19] #Cuts off the milliseconds for a simpler output.        
+        '''Where the origin of the crystal is located '''     
 
 class CodeTools(object):
     '''Contains methods used for the combination of motor tools and vna tools '''    
@@ -136,33 +90,67 @@ class CodeTools(object):
         return(s)
 
 class ArrayTools(object):
-    def __init__(self):
-        pass 
+    def __init__(self, Config):
+        self.config = Config
+  
+    def save_readme(self):
+        header_template = '''
+Directory = %(path)s
+FreqStart = %(freq_start)s
+FreqStop =  %(freq_stop)s
+FreqRes = %(freq_res)s
+X_length = %(x_len)s
+X_res = %(x_res)s
+Y_length = %(y-len)s
+Y_res = %(y_res)s
+Username = %(user)s
+Date = %(date)s
+Origin = %(origin)s
+ ''' %{'path':self.config.DirectoryName,'freq_start':self.config.FreqStart,'freq_stop':self.config.FreqStop,
+       'freq_res':self.config.FreqRes,'x_len':self.config.X_length,'y_len':self.config.Y_length,
+       'x_res':self.config.X_res,'y_res':self.config.Y_res,'user':self.config.Username,
+       'date':self.config.Date,'origin':self.config.Date}
+
+         path = path.join(self.config.DirectoryName, self.config.FileNamePrefix + '_README.dat')
+         f = open(path,'w')
+         f.write(header_template)
+         f.close()
+
+    def save_data(self, data_point):      
+        file = self.config.FileNamePrefix + '_' + str(data_point).zfill(6) + '.dat'
+        fullpath = os.path.join(self.config.DirectoryName, file)
+        np.savetxt(fullpath, self.data_mat)
+          
+        print "File Saved Successfully."
 
     def get_magnitude(self, data):
-        self.trans_data = np.zeros(len_data)
-        for i in range(0,len_data):
-            trans_data[i] = np.sqrt(data[i,0]**2 + data[i,1]**2)
+        mag_data = np.zeros(data.shape)
+        for i in range(0,len(data)):
+            mag_data[i] = np.sqrt(data[i,0]**2 + data[i,1]**2)
 
-        return trans_data 
+        return mag_data 
 
     def get_phase(self,data):
-        self.phi = np.zeros(len_data)
-        for i in range(0,len_data):
+        phase_data = np.zeros(data.shape)
+        for i in range(0,len(data)):
             phase_data[i] = np.angle(complex(data_mat[i, 0],data_mat[i, 1]))
 
         return phase_data
+   
+    def make_freq_vector(self):
+        Deltafreq = (self.config.freqstop - self.config.freqstart) / float(self.config.FreqRes)
+        freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
     
-    def make_3d_array(self, x_len, y_len, x_res, y_res, num_z_pts):
-        num_x_pts = int(np.ceil(x_len / x_res))
-        num_y_pts = int(np.ceil(y_len / y_res))
-        dim3_array = np.zeros((num_x_pts,num_y_pts), dtype=[('x_ind','i4'),('y_ind','i4'),('z_data','3c8')])
+    def make_3d_array(self):
+        num_x_pts = int(np.ceil(self.config.X_length / self.config.X_res))
+        num_y_pts = int(np.ceil(self.config.Y_length / self.config.Y_res))
+        dim3_array = np.zeros((num_x_pts,num_y_pts,self.config.FreqRes), dtype=float)
         
         for i in xrange(0,num_x_pts):
-            dim3_array[i,:]['x_ind'] = np.arange(0,num_x_pts)
+            dim3_array[i,:] = np.arange(0,num_x_pts)
             
         for i in xrange(0,num_y_pts):
-            dim3_array[:,i]['y_ind'] = np.arange(0,num_y_pts)
+            dim3_array[:,i] = np.arange(0,num_y_pts)
         
         return dim3_array
 
