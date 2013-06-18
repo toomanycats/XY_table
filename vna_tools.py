@@ -23,7 +23,7 @@ class VnaTools(object):
 
     def clear(self):
         g.clear(16)
-        time.sleep(0.5)
+        time.sleep(0.2)
         
     def check_parameters(self):
         #Checks the parameter setting.
@@ -62,9 +62,6 @@ class VnaTools(object):
              self.calsstring = "CAL" + self.cals
 
     def take_data(self):
-        #The following loop is repeated for every single data run.
-        #while (self.self.AGAIN=='y'):
-        #Makes the setup take a single sweep of data.
         g.clear(16)
         time.sleep(.5)
         g.write(16,"SING")
@@ -98,9 +95,9 @@ class VnaTools(object):
     def status_byte(self):
          self.clear()
          #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
-         singdone = 0
-         while singdone == 0:
-             time.sleep(0.5)
+         singdone = False
+         while singdone == False:
+             time.sleep(0.1)
              hex_byte = g.rsp(16)
              hex_byte = "%r" %hex_byte
              hex_byte = hex_byte.replace("\\","0")
@@ -108,7 +105,7 @@ class VnaTools(object):
              stat_byte = bin(int(hex_byte,16))
              #output: '0b10001' when complete
              if len(stat_byte) >= 7:
-                 singdone = stat_byte[2]
+                 singdone = True
 
     def _make_changes(self):
         manualchanges = raw_input("Do you want a break to change some settings manually? (y/n): ")
@@ -120,11 +117,6 @@ class VnaTools(object):
             #Reconnect and check the settings. ASSUMES FREQ RANGE IS UNCHANGED.
         self._open_con()
 
-    def prompt_user_for_another_run(self):
-        run_again = raw_input("Do you want to take another run? y/n")
-        if run_again.capitalize() == 'Y':
-            self.AGAIN = True
-            self._make_changes()
-        else:
-            self.AGAIN = False 
-
+    def close(self):
+        g.clear()
+        g.close(16)

@@ -281,6 +281,11 @@ class Motor(Connection):
         sleep(0.3)
         self.con.open()
 
+    def set_pos_as_zero(self):
+        self._set_var('P', 0, True)
+        self._CurrentStep = self._get_current_step()
+        self.CurrentPos = self._calculate_pos(self._CurrentStep)
+
 class Main(object):
     def __init__(self, Config):
         self.config = Config

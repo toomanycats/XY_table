@@ -101,7 +101,7 @@ FreqStop =  %(freq_stop)s
 FreqRes = %(freq_res)s
 X_length = %(x_len)s
 X_res = %(x_res)s
-Y_length = %(y-len)s
+Y_length = %(y_len)s
 Y_res = %(y_res)s
 Username = %(user)s
 Date = %(date)s
@@ -111,29 +111,31 @@ Origin = %(origin)s
        'x_res':self.config.X_res,'y_res':self.config.Y_res,'user':self.config.Username,
        'date':self.config.Date,'origin':self.config.Date}
 
-         path = path.join(self.config.DirectoryName, self.config.FileNamePrefix + '_README.dat')
-         f = open(path,'w')
-         f.write(header_template)
-         f.close()
+        fullpath = path.join(self.config.DirectoryName, self.config.FileNamePrefix + '_README.dat')
+        f = open(fullpath,'w')
+        f.write(header_template)
+        f.close()
 
-    def save_data(self, data_point):      
+    def save_data(self, data_point, data):      
         file = self.config.FileNamePrefix + '_' + str(data_point).zfill(6) + '.dat'
-        fullpath = os.path.join(self.config.DirectoryName, file)
-        np.savetxt(fullpath, self.data_mat)
+        fullpath = path.join(self.config.DirectoryName, file)
+        np.savetxt(fullpath, data)
           
         print "File Saved Successfully."
 
     def get_magnitude(self, data):
-        mag_data = np.zeros(data.shape)
-        for i in range(0,len(data)):
-            mag_data[i] = np.sqrt(data[i,0]**2 + data[i,1]**2)
+        mag_data = np.zeros(data.shape[0])
+        mag_data = np.sqrt(data[:,0]**2 + data[:,1]**2)
+        #for i in range(0,len(data)):
+        #    mag_data[i] = np.sqrt(data[i,0]**2 + data[i,1]**2)
 
         return mag_data 
 
     def get_phase(self,data):
-        phase_data = np.zeros(data.shape)
-        for i in range(0,len(data)):
-            phase_data[i] = np.angle(complex(data_mat[i, 0],data_mat[i, 1]))
+        phase_data = np.zeros(data.shape[0])
+        phase_data = np.angle(data_mat[:, 0],data_mat[:, 1])
+#         for i in range(0,len(data)):
+#             phase_data[i] = np.angle(complex(data_mat[i, 0],data_mat[i, 1]))
 
         return phase_data
    
@@ -144,13 +146,13 @@ Origin = %(origin)s
     def make_3d_array(self):
         num_x_pts = int(np.ceil(self.config.X_length / self.config.X_res))
         num_y_pts = int(np.ceil(self.config.Y_length / self.config.Y_res))
-        dim3_array = np.zeros((num_x_pts,num_y_pts,self.config.FreqRes), dtype=float)
-        
+        dim3_array = np.zeros((self.config.FreqRes,num_x_pts,num_y_pts), dtype=float)
+        '''z, row, col '''
         for i in xrange(0,num_x_pts):
-            dim3_array[i,:] = np.arange(0,num_x_pts)
+            dim3_array[0,i,:] = np.arange(0,num_x_pts)
             
         for i in xrange(0,num_y_pts):
-            dim3_array[:,i] = np.arange(0,num_y_pts)
+            dim3_array[0,:,i] = np.arange(0,num_y_pts)
         
         return dim3_array
 
