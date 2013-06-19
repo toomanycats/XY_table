@@ -6,6 +6,8 @@ from  getpass import getuser
 import datetime
 import numpy as np
 from os import path
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 class ConfigureDataSet(object):
     def __init__(self):
@@ -154,55 +156,20 @@ Origin = %(origin)s
         freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
 
 class PlotTools(object):
-    def __init__(self):
-        pass
-    
-    def _plot_data(self):
-        self._set_plot_type()
-        mp.ion() #Turns on interactive plot mode, which allows user to use the terminal without closing the plot.
-        #Get time and date for the plot title.
-        self.titlestr = self.directory + ".dat" + " " + self.calsstring + " " + self.param + " " + self.date_str
-        mp.clf()
-        mp.xlim( (self.freqstart, self.freqstop) )
-        mp.xlabel("Frequency (GHz)")        
+    def __init__(self, Config):
+        self.config = Config
 
-        if self.plot_type == 'logmag':
-            print "Plotting logmag."
-            #PLOT logaritmic transmission data. Labels graph with details of the data run.
-            logT = np.log10(self.trans_data) * 10
-            mp.plot(self.freq, logT)
-            mp.title(self.titlestr)
-            mp.ylabel(self.ystr + " (dB)")
+    def surface_plot(self, dim2_Z_array):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        
+        x = np.linspace(0,self.config.X_res,self.config.X_length)
+        y = np.linspace(0,self.config.Y_res,self.config.Y_length)
+        X,Y = np.meshgrid(x,y)
+        
+        Axes3D(fig).plot_surface(X,Y,dim2_Z_array)
+        plt.show()
 
-        elif self.plot_type == 'linmag':
-            print "Plotting linmag."
-            #PLOT linear transmission data.
-            mp.plot(self.freq, self.trans_data)
-            mp.title(self.titlestr)
-            mp.ylabel(self.ystr + " linear")
-     
-        elif self.plot_type == 'phase':
-            print "Plotting phase."
-            #PLOT phase data.
-            mp.plot(self.freq, self.phi)
-            mp.title(self.titlestr)
-            mp.ylabel(self.ystr + " phase (radians)")
-            
-    def prompt_user_for_plot(self):
-        plot_bool = raw_input("Do you wish to plot this data run? y/n: ")
-        plot_bool = plot_bool.capitalize()
-        if plot_bool == 'Y':
-            self._plot_data() 
-            
-    def _set_plot_type(self):
-        types = {'1':'logmag','2':'linmag','3':'phase'}
-        for key in types.iterkeys():
-            print "%(key)s  %(val)s" %{'key':key,'val':types[key]}
+
         
-        choice = raw_input("Select the type of plot you want(num): ")
-        
-        try:
-            self.plot_type = types[choice]
-        finally:
-            pass            
                 
