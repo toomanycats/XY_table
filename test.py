@@ -1,6 +1,8 @@
 import motor_tools
 import vna_tools
 import code_tools
+import code
+
 
 def loop_along_sample(config):
     data_point = 0
@@ -35,6 +37,13 @@ config.Y_length = 0.05
 config.X_res = 0.01
 config.Y_res = 0.01
 config.Origin = 0.0
+config.set_xy_num_pts()
+
+
+### cool trick for dropping into debug when no exception is raised but the value of a 
+### variable is dubious or wrong
+#if config.Origin == 0.0:
+#    code.interact(local=locals())
 
 arraytools = code_tools.ArrayTools(config)
 arraytools.save_readme()

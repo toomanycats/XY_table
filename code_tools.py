@@ -13,28 +13,26 @@ class ConfigureDataSet(object):
     def __init__(self):
         self.Username = getuser() 
         self.Date = datetime.datetime.now()   
-        self.DirectoryName = None
-        self.FileNamePrefix = None
-        self.FreqStart = None
-        self.FreqStop = None
-        self.FreqRes = None
+        self.DirectoryName = ''
+        self.FileNamePrefix = ''
+        self.FreqStart = 0
+        self.FreqStop = 0
+        self.FreqRes = 0
         self.TestSet = 'S21' #transmition always for this experiment
-        self.X_length = None
-        self.Y_length = None
-        self.X_res = None
-        self.Y_res = None
-        self.Origin = None
+        self.X_length = 0
+        self.Y_length = 0
+        self.X_res = 0
+        self.Y_res = 0
+        self.Origin = 0
         '''Where the origin of the crystal is located '''   
-        self.Num_x_pts = None
-        self.Num_y_pts = None
-        
-        self._get_xy_res()
+        self.Num_x_pts = 0
+        self.Num_y_pts = 0
 
-    def _get_xy_res(self):
+    def set_xy_num_pts(self):
         self.Num_x_pts = int(np.ceil(self.X_length / self.X_res))
         self.Num_y_pts = int(np.ceil(self.Y_length / self.Y_res))
 
-       return (num_x_pts, num_y_pts)
+        
 
 class CodeTools(object):
     '''Contains methods used for the combination of motor tools and vna tools '''    
