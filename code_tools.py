@@ -22,7 +22,17 @@ class ConfigureDataSet(object):
         self.X_res = None
         self.Y_res = None
         self.Origin = None
-        '''Where the origin of the crystal is located '''     
+        '''Where the origin of the crystal is located '''   
+        self.Num_x_pts = None
+        self.Num_y_pts = None
+        
+        self._get_xy_res()
+
+    def _get_xy_res(self):
+        self.Num_x_pts = int(np.ceil(self.X_length / self.X_res))
+        self.Num_y_pts = int(np.ceil(self.Y_length / self.Y_res))
+
+       return (num_x_pts, num_y_pts)
 
 class CodeTools(object):
     '''Contains methods used for the combination of motor tools and vna tools '''    
@@ -142,19 +152,6 @@ Origin = %(origin)s
     def make_freq_vector(self):
         Deltafreq = (self.config.freqstop - self.config.freqstart) / float(self.config.FreqRes)
         freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
-    
-    def make_3d_array(self):
-        num_x_pts = int(np.ceil(self.config.X_length / self.config.X_res))
-        num_y_pts = int(np.ceil(self.config.Y_length / self.config.Y_res))
-        dim3_array = np.zeros((self.config.FreqRes,num_x_pts,num_y_pts), dtype=float)
-        '''z, row, col '''
-        for i in xrange(0,num_x_pts):
-            dim3_array[0,i,:] = np.arange(0,num_x_pts)
-            
-        for i in xrange(0,num_y_pts):
-            dim3_array[0,:,i] = np.arange(0,num_y_pts)
-        
-        return dim3_array
 
 class PlotTools(object):
     def __init__(self):

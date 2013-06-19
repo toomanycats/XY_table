@@ -2,21 +2,23 @@ import motor_tools
 import vna_tools
 import code_tools
 
-def loop_along_sample(dim3_array, config):
+def loop_along_sample(config):
     data_point = 0
-    for index_y in xrange(0,dim3_array.shape[1]):
-        for index_x in xrange(0,dim3_array.shape[2]):
-            do_stuff(data_point)
-            data_point += 1
+    for index_y in xrange(0,config.Num_y_pts):
+        take_data(data_point)
+        for index_x in xrange(0,config.Num_x_pts):
             motors.mx.move_rel(config.X_res)
+            take_data(data_point)
+            data_point += 1         
         motors.mx.move_rel(-1*config.X_length)      
         motors.my.move_rel(config.Y_res)   
 
-def do_stuff(data_point):
+def take_data(data_point):
     print "Taking transmission data. \n"
     data = vna.take_data()
     mag_data = arraytools.get_magnitude(data)
     arraytools.save_data(data_point, mag_data)
+    
     
 
 config = code_tools.ConfigureDataSet()
@@ -34,7 +36,11 @@ config.Origin = 0.0
 
 arraytools = code_tools.ArrayTools(config)
 arraytools.save_readme()
-dim3_array = arraytools.make_3d_array()
+
+#make temp array to hold z values for plotting during the experiment
+# mag are stored as col vector
+#tot_pts = config.Num_x_pts * config.Num_y_pts
+#z_vec = np.zeros((config.FreqRes,tot_pts))
 
 motors = motor_tools.Main(config)
 print "pause"
@@ -42,7 +48,7 @@ vna = vna_tools.VnaTools(config)
 vna.check_parameters()
 vna.check_cal()
 
-loop_along_sample(dim3_array, config)
+loop_along_sample(config)
 motors.mx.close()
 motors.my.close()
 vna.close(16)
