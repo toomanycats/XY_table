@@ -65,9 +65,9 @@ class VnaTools(object):
         g.clear(16)
         time.sleep(.5)
         g.write(16,"SING")
-             
+          
         print "Waiting for data.\n"
-        self.status_byte()
+        self.status_byte() 
         #Recieve data as a long ascii string.
         g.write(16,"OUTPDATA")
         raw_data = g.read(16,1000000)#read many bytes
@@ -80,24 +80,18 @@ class VnaTools(object):
         #Should help let the user know things worked properly.
        
         len_data = (len(data)) / 2 
-        data_mat = np.zeros((len_data,2), dtype=complex)
+        data_mat = np.zeros((len_data), dtype=complex)
     
         #Put data into a two column matrix. Also gets the magnitude and phase.
         for i in range(0,len_data):
-            #self.data_mat[i,0] = data[2*i]
-            #self.data_mat[i,1] = data[2*i+1]
             data_mat[i] = np.complex(data[2*i],data[2*i+1])
-#           self.trans_data[i] = np.sqrt(self.data_mat[i,0]**2 + self.data_mat[i,1]**2)
-#           self.phi[i] = np.angle(complex(self.data_mat[i, 0], self.data_mat[i, 1]))
         
         return data_mat
 
     def status_byte(self):
-         self.clear()
          #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
          singdone = False
          while singdone == False:
-             time.sleep(0.1)
              hex_byte = g.rsp(16)
              hex_byte = "%r" %hex_byte
              hex_byte = hex_byte.replace("\\","0")
@@ -118,5 +112,5 @@ class VnaTools(object):
         self._open_con()
 
     def close(self):
-        g.clear()
+        g.clear(16)
         g.close(16)

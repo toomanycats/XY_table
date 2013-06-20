@@ -3,3 +3,4 @@
 .project* 
 .pydevproject*
 *BACKUP*
+mag_data.npy

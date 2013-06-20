@@ -32,8 +32,6 @@ class ConfigureDataSet(object):
         self.Num_x_pts = int(np.ceil(self.X_length / self.X_res))
         self.Num_y_pts = int(np.ceil(self.Y_length / self.Y_res))
 
-        
-
 class CodeTools(object):
     '''Contains methods used for the combination of motor tools and vna tools '''    
     
@@ -134,11 +132,9 @@ Origin = %(origin)s
         print "File Saved Successfully."
 
     def get_magnitude(self, data):
-        mag_data = np.zeros(data.shape[0])
-        mag_data = np.sqrt(data[:,0]**2 + data[:,1]**2)
-        #for i in range(0,len(data)):
-        #    mag_data[i] = np.sqrt(data[i,0]**2 + data[i,1]**2)
-
+        mag_data = np.zeros(data.shape[0], dtype=float)
+        mag_data = np.abs(data)
+        
         return mag_data 
 
     def get_phase(self,data):
@@ -157,17 +153,20 @@ class PlotTools(object):
     def __init__(self, Config):
         self.config = Config
 
-    def surface_plot(self, dim2_Z_array):
+    def surface_plot(self, slice):
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        ax = fig.add_subplot(221)
+        #ax = Axes3D(fig)
         
-        x = np.linspace(0,self.config.X_res,self.config.X_length)
-        y = np.linspace(0,self.config.Y_res,self.config.Y_length)
+        num_x = int(np.floor(self.config.X_length/self.config.X_res))
+        num_y = int(np.floor(self.config.Y_length/self.config.Y_res))
+        
+        x = np.linspace(0,self.config.X_length,num_x)
+        y = np.linspace(0,self.config.Y_length, num_y)
         X,Y = np.meshgrid(x,y)
         
-        Axes3D(fig).plot_surface(X,Y,dim2_Z_array)
-        plt.show()
-
-
-        
+        #Axes3D(fig).plot_surface(X,Y,dim2_Z_array,cm)
+        im = plt.imshow(slice, interpolation='nearest', origin='lower', cmap = plt.cm.jet)
+        plt.colorbar(im)
+       
                 
