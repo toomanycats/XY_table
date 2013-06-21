@@ -44,18 +44,14 @@ try:
     config.Y_res = 0.01
     config.Origin = 0.0
     config.set_xy_num_pts()
-
-    ### cool trick for dropping into debug when no exception is raised but the value of a 
-    ### variable is dubious or wrong
-    #if config.Origin == 0.0:
-    #    code.interact(local=locals())
     
+    # save the readme file to the directory
     arraytools = code_tools.ArrayTools(config)
     arraytools.save_readme()
     
-    #make temp array to hold z values for plotting during the experiment
-    # mag are stored as col vector
+    ### plotting ###
     array3d = np.zeros((config.FreqRes,config.Num_y_pts,config.Num_x_pts))
+    plt.figure()
     plt.ion()
     im = plt.imshow(array3d[22,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
     plt.colorbar(im)
