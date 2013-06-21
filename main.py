@@ -27,8 +27,9 @@ def take_data(data_point, index_y, index_x):
     arraytools.save_data(data_point, mag_data)
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
-    im = plt.imshow(array3d[22,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
-
+    im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+    plt.draw()
+    
 ####### START HERE #####
 try:
     config = code_tools.ConfigureDataSet()
@@ -53,9 +54,8 @@ try:
     array3d = np.zeros((config.FreqRes,config.Num_y_pts,config.Num_x_pts))
     plt.figure()
     plt.ion()
-    im = plt.imshow(array3d[22,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+    im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
     plt.colorbar(im)
-    plt.show()
     
     motors = motor_tools.Main(config)
     vna = vna_tools.VnaTools(config)
