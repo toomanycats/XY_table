@@ -10,7 +10,6 @@ class Connection(object):
         self.serial_con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.x_port = None
         self.y_port = None
-        sleep(0.3)
         
     def _uniq(self,input):
         output = []
@@ -29,34 +28,32 @@ class Connection(object):
      
     def set_port(self):
         port_list = self._inspect_port_log()
-        sleep(0.3)
+        sleep(0.1)
         unique_ports = self._uniq(port_list)
         for port in unique_ports:
             try:
                 if self.x_port is not None and self.y_port is not None:
                     break     
                 self.serial_con.port = '/dev/ttyUSB%s' %port
-                if self.serial_con.isOpen():
-                    self.serial_con.close() 
+                sleep(0.1)
                 self.serial_con.open()
-                sleep(0.3)
+                sleep(0.1)
                 sn = self._get_sn()
-                sleep(0.3)
+                sleep(0.1)
                 if sn == '269120375' and self.y_port is None:
                     self.y_port = self.serial_con.port
                     self.serial_con.close()
-                    sleep(0.3)
+                    sleep(0.1)
                 elif sn == '074130197' and self.x_port is None:
                     self.x_port = self.serial_con.port  
                     self.serial_con.close() 
-                    sleep(0.3)     
+                    sleep(0.1)     
             except serial.SerialException:
                 print "%s is not a connected port, trying next.\n" %self.serial_con.port
         if self.y_port is None:
             raise Exception, "Y port not set. Could be a delay issue."
         if self.x_port is None:
-           raise Exception, "X port not set, Could be a delay issue."      
-        sleep(1) 
+           raise Exception, "X port not set, Could be a delay issue."       
           
     def _inspect_port_log(self):
         '''for determing the ports of the serial-USB adaptors'''
@@ -68,9 +65,9 @@ class Connection(object):
         return output.split() #turn string into list
 
     def _loop_structure(self, pat):
-        sleep(0.1)
         re_obj = re.compile(pat)
         readback = self.serial_con.readlines()
+        sleep(0.1)
         for item in readback:
             if re_obj.match(item) is not None:
                 return item

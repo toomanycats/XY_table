@@ -1,11 +1,8 @@
 import gpib as g
-import numpy as np
 import time
-import matplotlib.pyplot as mp
-import scipy.io
 import os
 import sys
-import traceback
+import numpy as np
 
 class VnaTools(object):
     def __init__(self, Config):
@@ -19,15 +16,17 @@ class VnaTools(object):
         chan = g.find("VNA")
         print str(chan) + "\n"
         self.clear()   
-        g.write(16,"FORM4")#set up ascii format           
+        g.write(16,"FORM4")#set up ascii format    
+        self.clear()       
 
     def clear(self):
         g.clear(16)
-        time.sleep(0.2)
+        time.sleep(0.1)
         
     def check_parameters(self):
         #Checks the parameter setting.
         g.write(16, "PARA?")
+        self.clear()
         param = g.read(16, 100)
         self.param = param.replace('\n','').replace('"','')
         if self.param == 'S12':
@@ -46,13 +45,15 @@ class VnaTools(object):
     def turn_calibration_on(self):
         #Enable calibration. Usually done manually before running this prog.
         g.write(16,"CORRON")
+        self.clear()
         g.write(16,"CALS1")
+        self.clear()
                  
     def check_cal(self):
         #Checks the CAL setting.
-        g.clear(16)
-        time.sleep(.5)
+        self.clear()
         g.write(16,"CALS?")
+        self.clear()
         self.cals = g.read(16, 100)[0] #Takes only the first char in the string.
         if self.cals=='0':
              print "Calibration is OFF"
@@ -62,17 +63,25 @@ class VnaTools(object):
              self.calsstring = "CAL" + self.cals
 
     def take_data(self):
-        g.clear(16)
-        time.sleep(.5)
         g.write(16,"SING")
-          
         print "Waiting for data.\n"
-        self.status_byte() 
+        
+        singdone = False
+        while singdone == False:
+            hex_byte = g.rsp(16)
+            time.sleep(0.1)
+            hex_byte = "%r" %hex_byte
+            hex_byte = hex_byte.replace("\\","0")
+            hex_byte = hex_byte.replace("'","")
+            stat_byte = bin(int(hex_byte,16))
+             #output: '0b10001' when complete
+            if  stat_byte[2] == '1':
+                 singdone = True
+        
         #Recieve data as a long ascii string.
         g.write(16,"OUTPDATA")
         raw_data = g.read(16,1000000)#read many bytes
-        g.clear(16)
-         
+        self.clear() 
         #Parse string to create numerical data matrix.
         data = raw_data.replace("\n",",")
         data = np.fromstring(data,sep=",")
@@ -93,12 +102,13 @@ class VnaTools(object):
          singdone = False
          while singdone == False:
              hex_byte = g.rsp(16)
+             time.sleep(0.1)
              hex_byte = "%r" %hex_byte
              hex_byte = hex_byte.replace("\\","0")
              hex_byte = hex_byte.replace("'","")
              stat_byte = bin(int(hex_byte,16))
              #output: '0b10001' when complete
-             if len(stat_byte) >= 7:
+             if  stat_byte[2] == '1':
                  singdone = True
 
     def _make_changes(self):
@@ -114,3 +124,4 @@ class VnaTools(object):
     def close(self):
         g.clear(16)
         g.close(16)
+        print "Vna connection closed \n"

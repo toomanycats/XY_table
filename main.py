@@ -26,10 +26,7 @@ def take_data(data_point, index_y, index_x):
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
     half = np.floor(array3d.shape[0]/2)
-    plottools.surface_plot(array3d[half,:,:])
-    plt.show()
-    plt.draw()
-    plt.axes()
+    plottools.surface_plot(array3d[half,:,:])   
 
 ####### START HERE #####
 try:
@@ -82,6 +79,9 @@ except:
         motors.mx.close()
         motors.my.close()
         vna.close()
-    finally:    
-        code_tools.CodeTools()._notify_admin_error(config.Username, config.Date, tb)
+    except:
+        pass
+    finally:  
+        pass  
+        #code_tools.CodeTools()._notify_admin_error(config.Username, config.Date, tb)
 

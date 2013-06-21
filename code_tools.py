@@ -168,5 +168,7 @@ class PlotTools(object):
         #Axes3D(fig).plot_surface(X,Y,dim2_Z_array,cm)
         im = plt.imshow(slice, interpolation='nearest', origin='lower', cmap = plt.cm.jet)
         plt.colorbar(im)
+        plt.axes()
+        plt.show()
        
                 
