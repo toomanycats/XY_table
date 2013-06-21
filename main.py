@@ -27,8 +27,7 @@ def take_data(data_point, index_y, index_x):
     arraytools.save_data(data_point, mag_data)
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
-    plottools.redraw_plot(array3d[half,:,:])
-       
+    im = plt.imshow(array3d[22,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
 
 ####### START HERE #####
 try:
@@ -46,7 +45,6 @@ try:
     config.Origin = 0.0
     config.set_xy_num_pts()
 
-
     ### cool trick for dropping into debug when no exception is raised but the value of a 
     ### variable is dubious or wrong
     #if config.Origin == 0.0:
@@ -55,15 +53,15 @@ try:
     arraytools = code_tools.ArrayTools(config)
     arraytools.save_readme()
     
-    plottools = code_tools.PlotTools(config)
     #make temp array to hold z values for plotting during the experiment
     # mag are stored as col vector
     array3d = np.zeros((config.FreqRes,config.Num_y_pts,config.Num_x_pts))
-    half = np.floor(array3d.shape[0]/2)
-    plottools.plot_slice(array3d[half,:,:])
+    plt.ion()
+    im = plt.imshow(array3d[22,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+    plt.colorbar(im)
+    plt.show()
     
     motors = motor_tools.Main(config)
-
     vna = vna_tools.VnaTools(config)
     vna.check_parameters()
     vna.check_cal()
