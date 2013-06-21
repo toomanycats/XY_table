@@ -61,7 +61,6 @@ try:
     array3d = np.zeros((config.FreqRes,config.Num_y_pts,config.Num_x_pts))
     half = np.floor(array3d.shape[0]/2)
     plottools.plot_slice(array3d[half,:,:])
-    plt.ion()
     
     motors = motor_tools.Main(config)
 
@@ -70,6 +69,8 @@ try:
     vna.check_cal()
     
     loop_along_sample(config)
+    motors.mx.move_rel(-config.X_length)
+    motors.my.move_rel(-config.Y_length)
     #np.save('mag_data.dat', array3d)
     
     motors.mx.close()
