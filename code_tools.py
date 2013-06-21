@@ -153,11 +153,7 @@ class PlotTools(object):
     def __init__(self, Config):
         self.config = Config
 
-    def surface_plot(self, slice):
-        fig = plt.figure()
-        ax = fig.add_subplot(221)
-        #ax = Axes3D(fig)
-        
+    def plot_slice(self, slice):        
         num_x = int(np.floor(self.config.X_length/self.config.X_res))
         num_y = int(np.floor(self.config.Y_length/self.config.Y_res))
         
@@ -165,10 +161,10 @@ class PlotTools(object):
         y = np.linspace(0,self.config.Y_length, num_y)
         X,Y = np.meshgrid(x,y)
         
-        #Axes3D(fig).plot_surface(X,Y,dim2_Z_array,cm)
-        im = plt.imshow(slice, interpolation='nearest', origin='lower', cmap = plt.cm.jet)
-        plt.colorbar(im)
-        plt.axes()
-        plt.show()
-       
-                
+        im = plt.imshow(slice, interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        plt.colorbar(im)   
+        
+
+    def redraw_plot(self,slice):
+        plt.imshow(slice, interpolation='nearest', origin='lower', cmap = plt.cm.jet) 
+             

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import motor_tools
 import vna_tools
 import code_tools
@@ -25,8 +27,8 @@ def take_data(data_point, index_y, index_x):
     arraytools.save_data(data_point, mag_data)
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
-    half = np.floor(array3d.shape[0]/2)
-    plottools.surface_plot(array3d[half,:,:])   
+    plottools.redraw_plot(array3d[half,:,:])
+       
 
 ####### START HERE #####
 try:
@@ -57,6 +59,9 @@ try:
     #make temp array to hold z values for plotting during the experiment
     # mag are stored as col vector
     array3d = np.zeros((config.FreqRes,config.Num_y_pts,config.Num_x_pts))
+    half = np.floor(array3d.shape[0]/2)
+    plottools.plot_slice(array3d[half,:,:])
+    plt.ion()
     
     motors = motor_tools.Main(config)
 
@@ -85,3 +90,4 @@ except:
         pass  
         #code_tools.CodeTools()._notify_admin_error(config.Username, config.Date, tb)
 
+    

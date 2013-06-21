@@ -66,17 +66,7 @@ class VnaTools(object):
         g.write(16,"SING")
         print "Waiting for data.\n"
         
-        singdone = False
-        while singdone == False:
-            hex_byte = g.rsp(16)
-            time.sleep(0.1)
-            hex_byte = "%r" %hex_byte
-            hex_byte = hex_byte.replace("\\","0")
-            hex_byte = hex_byte.replace("'","")
-            stat_byte = bin(int(hex_byte,16))
-             #output: '0b10001' when complete
-            if  stat_byte[2] == '1':
-                 singdone = True
+        self.status_byte()
         
         #Recieve data as a long ascii string.
         g.write(16,"OUTPDATA")
@@ -102,7 +92,6 @@ class VnaTools(object):
          singdone = False
          while singdone == False:
              hex_byte = g.rsp(16)
-             time.sleep(0.1)
              hex_byte = "%r" %hex_byte
              hex_byte = hex_byte.replace("\\","0")
              hex_byte = hex_byte.replace("'","")
