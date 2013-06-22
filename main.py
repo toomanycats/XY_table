@@ -33,7 +33,7 @@ def take_data(data_point, index_y, index_x):
 ####### START HERE #####
 try:
     config = code_tools.ConfigureDataSet()
-    config.DirectoryName = '/media/Data/test'
+    config.ExperimentDir = 'test'
     config.FileNamePrefix = 'test'
     config.FreqStart = 7e9
     config.FreqStop = 15e9
@@ -45,6 +45,7 @@ try:
     config.Y_res = 0.01
     config.Origin = 0.0
     config.set_xy_num_pts()
+    config.make_experiment_dir()
     
     # save the readme file to the directory
     arraytools = code_tools.ArrayTools(config)
@@ -57,16 +58,21 @@ try:
     im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
     plt.colorbar(im)
     
+    ## Motor instance 
     motors = motor_tools.Main(config)
+    ## analyzer
     vna = vna_tools.VnaTools(config)
     vna.check_parameters()
     vna.check_cal()
     
+    # get to work
     loop_along_sample(config)
+    # when done, move back to where they started, temporary usage
     motors.mx.move_rel(-config.X_length)
     motors.my.move_rel(-config.Y_length)
     #np.save('mag_data.dat', array3d)
     
+    # close all devices and free ports.
     motors.mx.close()
     motors.my.close()
     vna.close()
