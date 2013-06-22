@@ -160,10 +160,11 @@ Origin = %(origin)s
 
     def load_data_files(self):
         '''loads data files and returns column vectors '''
-        data = np.zeros((self.config.FreqRes,file_num))
-        for i in xrange(0,self.config.X_length -1):
-            for j in xrange(0,self.config.X_length - 1):
-                file_num = i * self.config.X_length + j
+        num_pts = self.config.Num_x_pts * self.config.Num_y_pts
+        data = np.zeros((self.config.FreqRes,num_pts))
+        for i in xrange(0,self.config.Num_x_pts - 1):
+            for j in xrange(0,self.config.Num_x_pts - 1):
+                file_num = i * self.config.Num_x_pts + j
                 file_name = " %(prefix)s_%(filenumber)s.dat" %{'prefix':self.config.FileNamePrefix,
                                                             'filenumber':str(file_num).zfill(5)}
                 path_str = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,file_name)
