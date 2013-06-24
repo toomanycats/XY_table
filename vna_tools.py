@@ -96,15 +96,15 @@ class VnaTools(object):
          #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
          singdone = False
          while singdone == False:
-             #g.write(16,"OUTPSTAT")
-             #out = g.read(16,100)
-             hex_byte = g.rsp(16)
-             hex_byte = "%r" %hex_byte
-             hex_byte = hex_byte.replace("\\","0")
-             hex_byte = hex_byte.replace("'","")
-             stat_byte = bin(int(hex_byte,16))
+             g.write(16,"OUTPSTAT")
+             stat_byte = g.read(16,56)
+             #hex_byte = g.rsp(16)
+             #hex_byte = "%r" %hex_byte
+             #hex_byte = hex_byte.replace("\\","0")
+             #hex_byte = hex_byte.replace("'","")
+             #stat_byte = bin(int(hex_byte,16))
              #output: '0b10001' when complete
-             if  stat_byte[2] == '1':
+             if  stat_byte[1] == '1':
                  singdone = True
 
     def _make_changes(self):
