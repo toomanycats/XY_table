@@ -34,7 +34,7 @@ class ConfigureDataSet(object):
         self.Num_y_pts = int(np.ceil(self.Y_length / self.Y_res))
         
     def make_experiment_dir(self):
-            p = path.join(self.config.DirectoryRoot,self.config.ExperimentDir)
+            p = path.join(self.DirectoryRoot,self.ExperimentDir)
             if not path.exists(p):
                 makedirs(p)
 
@@ -120,7 +120,8 @@ Y_res = %(y_res)s
 Username = %(user)s
 Date = %(date)s
 Origin = %(origin)s
- ''' %{'path':self.config.DirectoryRoot,'freq_start':self.config.FreqStart,'freq_stop':self.config.FreqStop,
+ ''' %{'path':path.join(self.config.DirectoryRoot,self.config.ExperimentDir),
+       'freq_start':self.config.FreqStart,'freq_stop':self.config.FreqStop,
        'freq_res':self.config.FreqRes,'x_len':self.config.X_length,'y_len':self.config.Y_length,
        'x_res':self.config.X_res,'y_res':self.config.Y_res,'user':self.config.Username,
        'date':self.config.Date,'origin':self.config.Date}
@@ -130,10 +131,10 @@ Origin = %(origin)s
         f.write(header_template)
         f.close()
 
-    def save_data(self, data_point, data):  
+    def save_data_to_file(self, data_point, data):  
         file_name = "%(name_prefix)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix
                                                         ,'file_num':str(data_point).zfill(5)}
-        fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir, file_name)    
+        fullpath = path.join(self.config.DirectoryRoot, self.config.ExperimentDir, file_name)    
         np.savetxt(fullpath, data)
           
         print "File Saved Successfully."
@@ -141,16 +142,14 @@ Origin = %(origin)s
     def get_magnitude(self, data):
         '''Takes col of complex numbers and returns col of mag. '''
         mag_data = np.zeros(data.shape, dtype=float)
-        for i in xrange(0,data.shape[1]):
-            mag_data[:,i] = np.abs(data[:,i])
+        mag_data = np.abs(data)
         
         return mag_data 
 
     def get_phase(self,data):
         '''Takes cols of complex and returns col of phase '''
-        phase_data = np.zeros(data.shape)
-        for i in xrange(0,data.shape[1]):
-            phase_data[:,i] = np.angle(np.real(data[:,i]),np.imag(data[:,i]))
+        phase_data = np.zeros(data.shape,dtype=float)
+        phase_data = np.angle(np.real(data),np.imag(data))
 
         return phase_data
    
@@ -165,26 +164,24 @@ Origin = %(origin)s
         for i in xrange(0,self.config.Num_x_pts - 1):
             for j in xrange(0,self.config.Num_x_pts - 1):
                 file_num = i * self.config.Num_x_pts + j
-                file_name = " %(prefix)s_%(filenumber)s.dat" %{'prefix':self.config.FileNamePrefix,
+                file_name = "%(prefix)s_%(filenumber)s.dat" %{'prefix':self.config.FileNamePrefix,
                                                             'filenumber':str(file_num).zfill(5)}
                 path_str = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,file_name)
-                data[:,file_num] = np.load(path_str) 
-                print "file: %i\n" %file_num 
+                data[:,file_num] = np.loadtxt(path_str,dtype='float',comments='#',delimiter='\n')
+                print "file: %i loaded into array\n" %file_num 
         
         return data    
 
     def write_3d_matrix(self, data):        
-        '''Takes col of data and writes a 3D array to disk. '''      
-        outdata = np.zeros((self.config.X_length,self.config.Y_length))  
-        for i in xrange(0,self.config.X_length -1):
-            for j in xrange(0,self.config.X_length - 1):
-                index = i * self.config.X_length + j
-                outdata[i,j] = data[index]
+        '''Takes col of data and writes a 3D array to disk. Used if the automatic 3D array is NOT being used. 
+        FOr instance, you retook some data points and want to compile a new 3D matrix (ascii format)'''      
+        outdata = np.zeros((self.config.FreqRes,self.config.Num_y_pts,self.config.Num_x_pts))  
+        outdata = np.reshape(data,(self.config.FreqRes,self.config.Num_y_pts,self.config.Num_x_pts))
          
-        fname = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_mat_form')       
-        np.savetext(fname, outdata)       
-            
-            
+        fname = path.join(self.config.DirectoryRoot,self.config.ExperimentDir
+                          ,self.config.FileNamePrefix + '_flattened_mat_' + outdata.shape + '.txt')       
+        np.savetxt(fname, outdata)
+        np.savetxt(name,myarray.flatten())    
                 
 class PlotTools(object):
     def __init__(self, Config):

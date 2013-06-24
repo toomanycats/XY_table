@@ -24,7 +24,7 @@ def take_data(data_point, index_y, index_x):
     print "Taking transmission data. \n"
     data = vna.take_data()
     mag_data = arraytools.get_magnitude(data)
-    arraytools.save_data(data_point, mag_data)
+    arraytools.save_data_to_file(data_point, mag_data)
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
     im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
@@ -58,8 +58,12 @@ try:
     im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
     plt.colorbar(im)
     
+    ###test
+    data_read_from_files = arraytools.load_data_files()
+    arraytools.write_3d_matrix(data_read_from_files)
     ## Motor instance 
     motors = motor_tools.Main(config)
+    #print "pause"
     ## analyzer
     vna = vna_tools.VnaTools(config)
     vna.check_parameters()
@@ -68,9 +72,9 @@ try:
     # get to work
     loop_along_sample(config)
     # when done, move back to where they started, temporary usage
-    motors.mx.move_rel(-config.X_length)
+    # return to self.config.origin will go here
     motors.my.move_rel(-config.Y_length)
-    #np.save('mag_data.dat', array3d)
+    arraytools.write_3d_matrix(array3d)
     
     # close all devices and free ports.
     motors.mx.close()
