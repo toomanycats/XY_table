@@ -158,7 +158,7 @@ Origin = %(origin)s
         freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
 
     def load_data_files(self):
-        '''loads data files and returns column vectors '''
+        '''loads data files into a 1D array of data. Use reshape_1D_to_3D() to get back the 3D array'''
         num_pts = self.config.Num_x_pts * self.config.Num_y_pts
         data = np.zeros((self.config.FreqRes,num_pts))
         for i in xrange(0,self.config.Num_x_pts - 1):
@@ -172,16 +172,23 @@ Origin = %(origin)s
         
         return data    
 
-    def write_3d_matrix(self, data):        
+    def reshape_1D_to_3D(self, data):        
         '''Takes col of data and writes a 3D array to disk. Used if the automatic 3D array is NOT being used. 
         FOr instance, you retook some data points and want to compile a new 3D matrix (ascii format)'''      
         outdata = np.zeros((self.config.FreqRes,self.config.Num_y_pts,self.config.Num_x_pts))  
         outdata = np.reshape(data,(self.config.FreqRes,self.config.Num_y_pts,self.config.Num_x_pts))
-         
-        fname = path.join(self.config.DirectoryRoot,self.config.ExperimentDir
-                          ,self.config.FileNamePrefix + '_flattened_mat_' + outdata.shape + '.txt')       
-        np.savetxt(fname, outdata)
-        np.savetxt(name,myarray.flatten())    
+        
+        return outdata
+     
+    def save_flattened_array(self,data):
+        '''The only way to save n dim array as text, is to flatten it out into 1D array, load into 
+        program like matlab, then reshape. '''
+        dim1 = str(self.config.Num_y_pts)
+        dim2 = str(self.config.Num_x_pts)
+        dim3 = str(self.config.FreqRes)
+        fname = "%s_flattened_%s_%s_%s.txt " %(self.config.FileNamePrefix,dim1,dim2,dim3)      
+        fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,fname)
+        np.savetxt(fullpath, data)      
                 
 class PlotTools(object):
     def __init__(self, Config):

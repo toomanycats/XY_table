@@ -58,9 +58,6 @@ try:
     im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
     plt.colorbar(im)
     
-    ###test
-    data_read_from_files = arraytools.load_data_files()
-    arraytools.write_3d_matrix(data_read_from_files)
     ## Motor instance 
     motors = motor_tools.Main(config)
     #print "pause"
@@ -73,8 +70,7 @@ try:
     loop_along_sample(config)
     # when done, move back to where they started, temporary usage
     # return to self.config.origin will go here
-    motors.my.move_rel(-config.Y_length)
-    arraytools.write_3d_matrix(array3d)
+    #motors.my.move_rel(-config.Y_length)
     
     # close all devices and free ports.
     motors.mx.close()

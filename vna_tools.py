@@ -15,16 +15,21 @@ class VnaTools(object):
         print "Opening connection to VNA \n Address of VNA (Should be 16!):"
         chan = g.find("VNA")
         print str(chan) + "\n"
-        self.clear()   
+        self.clear()
         g.write(16,"FORM4")#set up ascii format    
         self.clear()       
+        g.write(16,"SYSB?")
+        string = g.read(16,50).strip("\n")
+        print "\n *** VNA is in %s mode. *** \n" %string
+        self.clear()
 
     def clear(self):
         g.clear(16)
-        time.sleep(0.1)
+        time.sleep(0.5)
         
     def check_parameters(self):
         #Checks the parameter setting.
+        self.clear()
         g.write(16, "PARA?")
         self.clear()
         param = g.read(16, 100)
@@ -91,6 +96,8 @@ class VnaTools(object):
          #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
          singdone = False
          while singdone == False:
+             #g.write(16,"OUTPSTAT")
+             #out = g.read(16,100)
              hex_byte = g.rsp(16)
              hex_byte = "%r" %hex_byte
              hex_byte = hex_byte.replace("\\","0")
@@ -111,6 +118,6 @@ class VnaTools(object):
         self._open_con()
 
     def close(self):
-        g.clear(16)
+        self.clear()
         g.close(16)
         print "Vna connection closed \n"
