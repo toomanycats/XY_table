@@ -75,7 +75,8 @@ class Connection(object):
 
 class Motor(Connection):
     
-    def __init__(self):
+    def __init__(self, Config):
+        self.config = Config
         self.con = Connection().serial_con
         self.codetools = CodeTools()
         self._LIMIT_METERS = 0.1 # maximum travel in meters
@@ -266,6 +267,7 @@ class Motor(Connection):
         print self.con.readlines()
 
     def close(self):
+        self.flush()
         sleep(0.1)
         self.con.close()
         bool = self.con.isOpen()
@@ -278,18 +280,32 @@ class Motor(Connection):
         sleep(0.3)
         self.con.open()
 
-    def set_pos_as_zero(self):
+    def set_pos_as_start(self):
+        '''Using the limit swictches, the motors return to home, 
+        then this pos is set as the start.'''
         self._set_var('P', 0, True)
         self._CurrentStep = self._get_current_step()
         self.CurrentPos = self._calculate_pos(self._CurrentStep)
 
+    def return_to_sample_origin(self, origin):
+        steps = self._calc_steps(origin)
+        self.con.write('MA %i' %steps)
+    
+    def set_pos_as_sample_origin(self, axis):
+        axis = axis.lower()
+        if axis == 'x':
+            self.config.X_origin = self._calculate_pos(self._CurrentStep)
+        elif axis == 'y':
+            self.config.Y_origin = self._calculate_pos(self._CurrentStep)
+
+
 class Main(object):
     def __init__(self, Config):
-        self.config = Config
+        #self.config = Config
         Con = Connection()
         Con.set_port()
         
-        self.mx = Motor()
+        self.mx = Motor(Config)
         self.mx.con.port = Con.x_port
         self.mx.open()
         print "Connected to X motor on port %s \n" %self.mx.con.port
@@ -300,7 +316,7 @@ class Main(object):
         self.mx._set_var('P',0)
         self.mx._set_var('A',51200)
         
-        self.my = Motor()
+        self.my = Motor(Config)
         self.my.con.port = Con.y_port
         self.my.open()
         print "Connected to Y motor on port %s \n" %self.my.con.port

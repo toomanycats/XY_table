@@ -24,7 +24,8 @@ class ConfigureDataSet(object):
         self.Y_length = 0
         self.X_res = 0
         self.Y_res = 0
-        self.Origin = 0
+        self.X_origin = 0
+        self.Y_origin = 0
         '''Where the origin of the crystal is located '''   
         self.Num_x_pts = 0
         self.Num_y_pts = 0

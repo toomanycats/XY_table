@@ -43,7 +43,8 @@ try:
     config.Y_length = 0.05
     config.X_res = 0.01
     config.Y_res = 0.01
-    config.Origin = 0.0
+    config.X_origin = 0.0
+    config.Y_origin = 0.0
     config.set_xy_num_pts()
     config.make_experiment_dir()
     
@@ -60,17 +61,21 @@ try:
     
     ## Motor instance 
     motors = motor_tools.Main(config)
-    #print "pause"
     ## analyzer
     vna = vna_tools.VnaTools(config)
     vna.check_parameters()
     vna.check_cal()
     
-    # get to work
+    ### testing origin handling ###
+    motors.mx.set_pos_as_sample_origin('x')
+    motors.my.set_pos_as_sample_origin('y')
+    
+    # get to work on sample
     loop_along_sample(config)
-    # when done, move back to where they started, temporary usage
-    # return to self.config.origin will go here
-    #motors.my.move_rel(-config.Y_length)
+    
+    # return to origin 
+    motors.mx.return_to_sample_origin(config.X_origin)
+    motors.my.return_to_sample_origin(config.Y_origin)
     
     # close all devices and free ports.
     motors.mx.close()
