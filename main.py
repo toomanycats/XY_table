@@ -9,7 +9,7 @@ import traceback
 import matplotlib.pyplot as plt
 
 def loop_along_sample(config):
-    data_point = 0
+    data_point = 0 # used to name the individual data point files. 
     index_x = 0
     for index_y in xrange(0,config.Num_y_pts):
         take_data(data_point, index_y, index_x)
@@ -37,7 +37,7 @@ try:
     config.FileNamePrefix = 'test'
     config.FreqStart = 7e9
     config.FreqStop = 15e9
-    config.FreqRes = 101
+    config.Freq_num_pts = 101
     config.TestSet = 'S21' #transmition always for this experiment
     config.X_length = 0.05
     config.Y_length = 0.05
@@ -53,7 +53,7 @@ try:
     arraytools.save_readme()
     
     ### plotting ###
-    array3d = np.zeros((config.FreqRes,config.Num_y_pts,config.Num_x_pts))
+    array3d = np.zeros((config.Freq_num_pts,config.Num_y_pts,config.Num_x_pts))
     plt.figure()
     plt.ion()
     im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   

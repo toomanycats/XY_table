@@ -6,12 +6,15 @@ from code_tools import CodeTools
 import code_tools
 
 class Connection(object):
+    '''This class determines the port of the X and Y motors. '''
     def __init__(self):
         self.serial_con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.x_port = None
         self.y_port = None
         
     def _uniq(self,input):
+        '''Shorten the list of ports returned frm the dmesg call in _inspect_port_log(),
+        so that set_port() doesn't repeat on ports already tried.'''
         output = []
         for x in input:
             if x not in output:
@@ -19,6 +22,7 @@ class Connection(object):
         return output
     
     def _get_sn(self):
+        '''Query the motor for it's serial number. '''
         self.serial_con.write('PR SN\r\n')
         sleep(0.2)
         pat = '[0-9]{9}\r\n'
@@ -27,6 +31,7 @@ class Connection(object):
         return out
      
     def set_port(self):
+        '''Try to open motors on ports and set the primitive class's port string. '''
         port_list = self._inspect_port_log()
         sleep(0.1)
         unique_ports = self._uniq(port_list)
@@ -56,7 +61,7 @@ class Connection(object):
            raise Exception, "X port not set, Could be a delay issue."       
           
     def _inspect_port_log(self):
-        '''for determing the ports of the serial-USB adaptors'''
+        '''Use dmesg in the bash shell, to get a list of possible USB ports.'''
         cmd = '''dmesg | grep -w ".*cp210x.*attached.*" | grep -o "ttyUSB[0-9]" | grep -o [0-9]'''
         p = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (output, error) = p.communicate()
@@ -73,7 +78,9 @@ class Connection(object):
                 return item
         return "unknown"
 
+
 class Motor(Connection):
+    '''This is a collection of methods which control an Mdrive 23 step motor. '''
     
     def __init__(self, Config):
         self.config = Config
@@ -117,6 +124,7 @@ class Motor(Connection):
         return CurrentPos  
 
     def _get_ms(self):
+        '''Query the motor for the current microstep setting. '''
         self.flush()
         sleep(0.1)
         self.con.write('PR MS\r\n')
@@ -127,6 +135,7 @@ class Motor(Connection):
         return  int(ms.strip('\n').strip('\r'))
 
     def _get_current_step(self):
+        '''Return the current step or position 'P' of the motor. '''
         self.flush()
         self.con.write('PR P\r\n')# P is really the step
         pat = '\-*[0-9]+\r\n'
@@ -135,6 +144,7 @@ class Motor(Connection):
         return int(output.strip('\r\n'))
 
     def _calc_steps(self,linear_dist):
+        '''How many steps it takes to get somewhere.'''
         steps = float(linear_dist)/self._meters_per_rev * float((self._steps_per_rev[str(self.MicroStep)]))
          
         return int(round(steps)) 
@@ -148,6 +158,9 @@ class Motor(Connection):
              return False
   
     def _query_pos(self, target):
+        '''Used as a poll of the location of a motor, so that the program can spit out the 
+        new position after the motor has arrived. It also checks if a limit switch has been 
+        tripped. '''
         Flag = False
         while Flag == False:
             current_step = self._get_current_step()
@@ -162,6 +175,7 @@ class Motor(Connection):
                 Flag = True
 
     def move_rel(self, linear_dist):
+        '''Tell the motor to move a linear distance as a relative position.'''
         steps = self._calc_steps(linear_dist)
         #print "steps: %i " %steps ;print "\n"
         if self._check_limits(steps):# True is a fail on limits
@@ -176,6 +190,8 @@ class Motor(Connection):
         print "New Pos: %s " %self.codetools.ToSI(self.CurrentPos)
                   
     def write(self, arg, echk = False):
+        '''Write a command to the motor where the lines feed and carriage return are automatically included.
+        This is unlike the primitive class pySerial where you must send the \r\n . '''
         self.con.write("%s\r\n" %arg)
         sleep(0.1)
         list = self.con.readlines()
@@ -193,11 +209,15 @@ class Motor(Connection):
         output = self.write('PR %s' %var)# mdrive echoes input
     
     def set_micro_step(self, val, echk = True):
-        self._set_var('MS', str(val), echk)
+        '''A micro step is a division of a 2pi rotation into smaller steps.
+         Default is 256 which is the finest resolution. THere are choices in powers of two and
+         decimal amounts. '''
+        self._set_var('MS', str(val), True)
         sleep(0.2)
         self.MicroStep = self._get_ms()
 
     def set_device_name(self, name, echk = False):
+        '''No longer used. All motor names are "!" '''
         pat = '[A-Z]'
         if not re.match(pat, name):
             print "Names must be one Char only.\n"
@@ -207,6 +227,7 @@ class Motor(Connection):
         self.DeviceName = self._getDeviceName()
 
     def flush(self):
+        '''Flush the input and output buffers of the motor. '''
         self.con.flushInput()
         sleep(0.1)
         self.con.flushOutput()
@@ -240,6 +261,10 @@ class Motor(Connection):
         return DeviceName.strip('\n').strip('\r')
 
     def _loop_structure(self, pat):
+        '''A method used to complete all the queries in this class. The mdrive motor
+        echos all sent commands and returns values as a list. This method uses regex to 
+        sift out the desired information for that list. Notice the pattern sent in is a
+        regex pattern pertinent to the task at hand.'''
         sleep(0.1)
         re_obj = re.compile(pat)
         readback = self.con.readlines()
@@ -249,6 +274,7 @@ class Motor(Connection):
         return "unknown"
 
     def reset(self):
+        '''Flush the input and output buffer, clear errors and send Control C. '''
         sleep(0.1)
         self.flush()
         sleep(0.1)
@@ -267,6 +293,7 @@ class Motor(Connection):
         print self.con.readlines()
 
     def close(self):
+        '''Flush the motors and close the serial connection. '''
         self.flush()
         sleep(0.1)
         self.con.close()
@@ -277,6 +304,7 @@ class Motor(Connection):
             print "Closing motor failed, still connected"
             
     def open(self):
+        '''Open a connection to a motor. Uses pySerial instance called self.con.'''
         sleep(0.3)
         self.con.open()
 
@@ -288,10 +316,14 @@ class Motor(Connection):
         self.CurrentPos = self._calculate_pos(self._CurrentStep)
 
     def return_to_sample_origin(self, origin):
+        '''Return the sample to the origin set in the config object. '''
         steps = self._calc_steps(origin)
-        self.con.write('MA %i' %steps)
+        self.con.write('MA %i\r\n' %steps)
     
     def set_pos_as_sample_origin(self, axis):
+        '''Arg is the axis name, 'x' or 'y'. Set this position as the origin of the sample.
+        Recall: steps are always aggregate, and the zeros position is always defined wrt to the 
+        'HOME' position set by the limit switches. '''
         axis = axis.lower()
         if axis == 'x':
             self.config.X_origin = self._calculate_pos(self._CurrentStep)
@@ -300,6 +332,8 @@ class Motor(Connection):
 
 
 class Main(object):
+    '''This could be a main method in Motor as well.This object created an instance of Motor
+    and sets up them motor with the standard user presets used in the lab.'''
     def __init__(self, Config):
         #self.config = Config
         Con = Connection()

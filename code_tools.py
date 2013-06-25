@@ -18,7 +18,7 @@ class ConfigureDataSet(object):
         self.FileNamePrefix = ''
         self.FreqStart = 0
         self.FreqStop = 0
-        self.FreqRes = 0
+        self.Freq_num_pts = 0
         self.TestSet = 'S21' #transmition always for this experiment
         self.X_length = 0
         self.Y_length = 0
@@ -113,7 +113,7 @@ class ArrayTools(object):
 Directory = %(path)s
 FreqStart = %(freq_start)s
 FreqStop =  %(freq_stop)s
-FreqRes = %(freq_res)s
+Freq_num_pts = %(freq_res)s
 X_length = %(x_len)s
 X_res = %(x_res)s
 Y_length = %(y_len)s
@@ -123,7 +123,7 @@ Date = %(date)s
 Origin = %(origin)s
  ''' %{'path':path.join(self.config.DirectoryRoot,self.config.ExperimentDir),
        'freq_start':self.config.FreqStart,'freq_stop':self.config.FreqStop,
-       'freq_res':self.config.FreqRes,'x_len':self.config.X_length,'y_len':self.config.Y_length,
+       'freq_res':self.config.Freq_num_pts,'x_len':self.config.X_length,'y_len':self.config.Y_length,
        'x_res':self.config.X_res,'y_res':self.config.Y_res,'user':self.config.Username,
        'date':self.config.Date,'origin':self.config.Date}
 
@@ -155,13 +155,13 @@ Origin = %(origin)s
         return phase_data
    
     def make_freq_vector(self):
-        Deltafreq = (self.config.freqstop - self.config.freqstart) / float(self.config.FreqRes)
+        Deltafreq = (self.config.freqstop - self.config.freqstart) / float(self.config.Freq_num_pts)
         freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
 
     def load_data_files(self):
         '''loads data files into a 1D array of data. Use reshape_1D_to_3D() to get back the 3D array'''
         num_pts = self.config.Num_x_pts * self.config.Num_y_pts
-        data = np.zeros((self.config.FreqRes,num_pts))
+        data = np.zeros((self.config.Freq_num_pts,num_pts))
         for i in xrange(0,self.config.Num_x_pts - 1):
             for j in xrange(0,self.config.Num_x_pts - 1):
                 file_num = i * self.config.Num_x_pts + j
@@ -176,8 +176,8 @@ Origin = %(origin)s
     def reshape_1D_to_3D(self, data):        
         '''Takes col of data and writes a 3D array to disk. Used if the automatic 3D array is NOT being used. 
         FOr instance, you retook some data points and want to compile a new 3D matrix (ascii format)'''      
-        outdata = np.zeros((self.config.FreqRes,self.config.Num_y_pts,self.config.Num_x_pts))  
-        outdata = np.reshape(data,(self.config.FreqRes,self.config.Num_y_pts,self.config.Num_x_pts))
+        outdata = np.zeros((self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))  
+        outdata = np.reshape(data,(self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))
         
         return outdata
      
@@ -186,7 +186,7 @@ Origin = %(origin)s
         program like matlab, then reshape. '''
         dim1 = str(self.config.Num_y_pts)
         dim2 = str(self.config.Num_x_pts)
-        dim3 = str(self.config.FreqRes)
+        dim3 = str(self.config.Freq_num_pts)
         fname = "%s_flattened_%s_%s_%s.txt " %(self.config.FileNamePrefix,dim1,dim2,dim3)      
         fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,fname)
         np.savetxt(fullpath, data)      
