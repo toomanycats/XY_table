@@ -7,6 +7,7 @@ import code
 import numpy as np
 import traceback
 import matplotlib.pyplot as plt
+import scipy.io as sio
 
 def loop_along_sample(config):
     data_point = 0 # used to name the individual data point files. 
@@ -27,7 +28,7 @@ def take_data(data_point, index_y, index_x):
     arraytools.save_data_to_file(data_point, mag_data)
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
-    im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+    #im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
     plt.draw()
     
 ####### START HERE #####
@@ -37,7 +38,7 @@ try:
     config.FileNamePrefix = 'test'
     config.FreqStart = 7e9
     config.FreqStop = 15e9
-    config.Freq_num_pts = 801
+    config.Freq_num_pts = 51
     config.TestSet = 'S21' #transmition always for this experiment
     config.X_length = 0.05
     config.Y_length = 0.05
@@ -62,7 +63,7 @@ try:
     plt.colorbar(im)
     
     ## Motor instance 
-    motors = motor_tools.Main(config, set_ports = True)
+    motors = motor_tools.Main(config)
     ## analyzer
     vna = vna_tools.VnaTools(config)
     vna.check_parameters()
@@ -75,6 +76,10 @@ try:
     # get to work on sample
     loop_along_sample(config)
     
+    # save data in binary as numpy ndarray
+    np.save(config.FileNamePrefix + '_DataArray',array3d)
+    # save as matlab 3D matrix in binary      
+    sio.savemat(config.FileNamePrefix +'_DataArray.mat', {'array3d':array3d}) 
     # return to origin 
     motors.mx.return_to_sample_origin(config.X_origin)
     motors.my.return_to_sample_origin(config.Y_origin)
@@ -83,6 +88,11 @@ try:
     motors.mx.close()
     motors.my.close()
     vna.close()
+
+except ValueError:
+    print """A value error was thrown. It is likely that the Freq_num_pts was 
+changed and does not match the values used in to create the variable "array3d" which 
+holds the data for the in-vivo plots and finally for saving."""
 
 except:
     print "Exception raised, closing gpib and serial connections, emailing admin."

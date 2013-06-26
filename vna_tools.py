@@ -23,7 +23,6 @@ class VnaTools(object):
         g.write(16,"SYSB?")
         string = g.read(16,50).strip("\n")
         print "\n *** VNA is in %s mode. *** \n" %string
-        self.clear()
 
     def clear(self, TIME = 0.5):
         '''Clear the VNA buffers. '''
@@ -62,8 +61,7 @@ class VnaTools(object):
         '''Checks the CAL setting.'''
         self.clear()
         g.write(16,"CALS?")
-        self.clear()
-        self.cals = g.read(16, 100)[0] #Takes only the first char in the string.
+        self.cals = g.read(16, 100)[0] 
         if self.cals=='0':
              print "Calibration is OFF"
              self.calsstring = "no cal"
@@ -73,16 +71,17 @@ class VnaTools(object):
 
     def take_data(self):
         '''Take a single sweep, wait for the sweep to finish, then record the data. '''
+        self.check_for_errors()
         g.write(16,"SING")
         print "Waiting for data.\n"
         
         self.status_byte()
-        self.print_and_clear_error()
+        self._print_and_clear_error()
         
         #Recieve data as a long ascii string.
         g.write(16,"OUTPDATA")
-        time.sleep(.5)
-        print "Getting data from VAN \n"
+        print "Getting data from analyzer \n"
+        time.sleep(0.5)
         raw_data = g.read(16,1000000)#read many bytes
         #Parse string to create numerical data matrix.
         data = raw_data.replace("\n",",")
@@ -131,11 +130,18 @@ class VnaTools(object):
         g.close(16)
         print "Vna connection closed \n"
 
-    def print_and_clear_error(self):
+    def _print_and_clear_error(self):
+        '''Prints the error from the VNA and clears them. '''
         print "Clearing error from VNA. \n"
         g.write(16,"OUTPERRO")
         error_msg = g.read(16,1000)
         print error_msg + '\n'
             
-            
+    def check_for_errors(self):
+        '''Check the status byte and if there's an error, print and clear it. '''
+        g.write(16,"OUTPSTAT")
+        stat_bytes = g.read(16,100)
+        if stat_bytes[2] == '1':
+            print "Error found in status byte, clearing now. \n"
+            self._print_and_clear_error()        
         
