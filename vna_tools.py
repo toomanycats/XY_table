@@ -17,9 +17,11 @@ class VnaTools(object):
         print "Opening connection to VNA \n Address of VNA (Should be 16!):"
         chan = g.find("VNA")
         print str(chan) + "\n"
-        self.clear()
+        self.check_for_errors()# head off synxtax errors and corrupted buffer
+        #self.clear()
         g.write(16,"FORM4")#set up ascii format    
-        self.clear()       
+        time.sleep(0.5)
+        #self.clear()       
         g.write(16,"SYSB?")
         string = g.read(16,50).strip("\n")
         print "\n *** VNA is in %s mode. *** \n" %string
@@ -104,13 +106,17 @@ class VnaTools(object):
         #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
         singdone = False
         while singdone == False:
+            time.sleep(0.25)
             hex = g.rsp(16)
+            time.sleep(0.25)
             hex = "%r" %hex
             hex = hex.replace('\\','0').replace("'","")  
-            stat = bin(int(hex,16))
-            if len(stat) > 3 and stat[6] =='1':#0b0 = not done, 0b1 = error, obxxxx1 = done
+            stat = int(hex,16)
+            print 'status byte: ' + str(stat) + '\n'
+            if stat== 17:# and stat[6] =='1':#0b0 = not done, 0b1 = error, obxxxx1 = done
                 singdone = True
                 g.write(16,"CLES")# clear the status byte for next read
+                time.sleep(0.25)
         print "Sweep completed. \n"   
 
     def _make_changes(self):

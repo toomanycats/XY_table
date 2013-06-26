@@ -28,7 +28,7 @@ def take_data(data_point, index_y, index_x):
     arraytools.save_data_to_file(data_point, mag_data)
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
-    #im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+    im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
     plt.draw()
     
 ####### START HERE #####
@@ -38,7 +38,7 @@ try:
     config.FileNamePrefix = 'test'
     config.FreqStart = 7e9
     config.FreqStop = 15e9
-    config.Freq_num_pts = 51
+    config.Freq_num_pts = 801
     config.TestSet = 'S21' #transmition always for this experiment
     config.X_length = 0.05
     config.Y_length = 0.05
@@ -81,6 +81,7 @@ try:
     # save as matlab 3D matrix in binary      
     sio.savemat(config.FileNamePrefix +'_DataArray.mat', {'array3d':array3d}) 
     # return to origin 
+    print "returning to origin \n"
     motors.mx.return_to_sample_origin(config.X_origin)
     motors.my.return_to_sample_origin(config.Y_origin)
     
