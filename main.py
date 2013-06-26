@@ -23,9 +23,11 @@ def loop_along_sample(config):
 
 def take_data(data_point, index_y, index_x):
     print "Taking transmission data. \n"
+    # get the raw data as complex pairs
     data = vna.take_data()
+    arraytools.save_data_to_file(data_point, data)
+    # get the mag and save to array3d
     mag_data = arraytools.get_magnitude(data)
-    arraytools.save_data_to_file(data_point, mag_data)
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
     im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
