@@ -45,6 +45,8 @@ try:
     config.Y_res = 0.01
     config.X_origin = 0.0
     config.Y_origin = 0.0
+    config.x_port = '/dev/ttyUSB0'
+    config.y_port = '/dev/ttyUSB1'
     config.set_xy_num_pts()
     config.make_experiment_dir()
     
@@ -60,7 +62,7 @@ try:
     plt.colorbar(im)
     
     ## Motor instance 
-    motors = motor_tools.Main(config)
+    motors = motor_tools.Main(config, set_ports = True)
     ## analyzer
     vna = vna_tools.VnaTools(config)
     vna.check_parameters()

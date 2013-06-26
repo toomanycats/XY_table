@@ -29,6 +29,8 @@ class ConfigureDataSet(object):
         '''Where the origin of the crystal is located '''   
         self.Num_x_pts = 0
         self.Num_y_pts = 0
+        self.x_port = ''
+        self.y_port = ''
 
     def set_xy_num_pts(self):
         self.Num_x_pts = int(np.ceil(self.X_length / self.X_res))

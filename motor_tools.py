@@ -32,34 +32,33 @@ class Connection(object):
      
     def set_port(self):
         '''Try to open motors on ports and set the primitive class's port string. '''
-        TIME = 1
+        
+        print """Set ports routine running...This will take about 25 sec to run b.c we need
+        to wait for the  port to reset after discovering the serial numbers."""
+        
         port_list = self._inspect_port_log()
-        sleep(TIME)
         unique_ports = self._uniq(port_list)
         for port in unique_ports:
             try:
                 if self.x_port is not None and self.y_port is not None:
                     break     
                 self.serial_con.port = '/dev/ttyUSB%s' %port
-                sleep(TIME)
                 self.serial_con.open()
-                sleep(TIME)
                 sn = self._get_sn()
-                sleep(TIME)
                 if sn == '269120375' and self.y_port is None:
                     self.y_port = self.serial_con.port
                     self.serial_con.close()
-                    sleep(TIME)
+                    sleep(10)
                 elif sn == '074130197' and self.x_port is None:
                     self.x_port = self.serial_con.port  
                     self.serial_con.close() 
-                    sleep(TIME)     
+                    sleep(10)     
             except serial.SerialException:
                 print "%s is not a connected port, trying next.\n" %self.serial_con.port
         if self.y_port is None:
-            raise Exception, "Y port not set. Could be a delay issue."
+            raise Exception, "Y port not set. The port might not have reset yet. Try again."
         if self.x_port is None:
-           raise Exception, "X port not set, Could be a delay issue."       
+           raise Exception, "X port not set. The port might not have reset yet. Try again."       
           
     def _inspect_port_log(self):
         '''Use dmesg in the bash shell, to get a list of possible USB ports.'''
@@ -335,47 +334,61 @@ class Motor(Connection):
 class Main(object):
     '''This could be a main method in Motor as well.This object created an instance of Motor
     and sets up them motor with the standard user presets used in the lab.'''
-    def __init__(self, Config):
-        #self.config = Config
-        Con = Connection()
-        Con.set_port()
-        
-        self.mx = Motor(Config)
-        self.mx.con.port = Con.x_port
-        self.mx.open()
-        print "Connected to X motor on port %s \n" %self.mx.con.port
-        self.mx.clear_error()
-        self.mx.MicroStep = self.mx._get_ms()
-        self.mx._set_var('S1','2,0,0')
-        self.mx._set_var('LM', 2)
-        self.mx._set_var('P',0)
-        self.mx._set_var('A',51200)
-        
-        self.my = Motor(Config)
-        self.my.con.port = Con.y_port
-        self.my.open()
-        print "Connected to Y motor on port %s \n" %self.my.con.port
-        self.my.clear_error()
-        self.my.MicroStep = self.my._get_ms()
-        self.my._set_var('P',0)
-        self.my._set_var('A',51200)
-        self.my._set_var('S1','2,0,0')
-        self.my._set_var('LM', 2)
-        
-
-        
-        
-               
+    def __init__(self, Config, set_ports = False):
+        if set_ports == True:
+            Con = Connection() 
+            Con.set_port()
+            
+            self.mx = Motor(Config)
+            self.mx.con.port = Con.x_port
+            self.mx.open()
+            self.mx.clear_error()
+            self.mx.MicroStep = self.mx._get_ms()
+            self.mx._set_var('S1','2,0,0')
+            self.mx._set_var('LM', 2)
+            self.mx._set_var('P',0)
+            self.mx._set_var('A',51200)
+            
+            self.my = Motor(Config)
+            self.my.con.port = Con.y_port
+            self.my.open()
+            self.my.clear_error()
+            self.my.MicroStep = self.my._get_ms()
+            self.my._set_var('P',0)
+            self.my._set_var('A',51200)
+            self.my._set_var('S1','2,0,0')
+            self.my._set_var('LM', 2)
+          
+        else: 
+            self.mx = Motor(Config)
+            self.mx.con.port = Config.x_port
+            try:
+                self.mx.open()
+                print "Connected to X motor on port %s \n" %Config.x_port
+                self.mx.clear_error()
+                self.mx.MicroStep = self.mx._get_ms()
+                self.mx._set_var('S1','2,0,0')
+                self.mx._set_var('LM', 2)
+                self.mx._set_var('P',0)
+                self.mx._set_var('A',51200)
+            
+            except serial.SerialException:
+                print "The port for the x motor is incorrect. Run set_ports = True."
                 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+            self.my = Motor(Config)
+            self.my.con.port = Config.y_port
+            try:
+                self.my.open()
+                print "Connected to Y motor on port %s \n" %Config.y_port
+                self.my.clear_error()
+                self.my.MicroStep = self.my._get_ms()
+                self.my._set_var('P',0)
+                self.my._set_var('A',51200)
+                self.my._set_var('S1','2,0,0')
+                self.my._set_var('LM', 2)
+            
+            except serial.SerialException:
+                print "The port for the y motor is incorrect. Run set_ports = True."
+             
         
         
