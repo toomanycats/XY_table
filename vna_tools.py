@@ -5,6 +5,7 @@ import sys
 import numpy as np
 
 class VnaTools(object):
+    '''Library of methods to control an HP8510C Vector Network Analyzer. '''
     def __init__(self, Config):
         self.config = Config 
         self.freqstart = self.config.FreqStart
@@ -12,6 +13,7 @@ class VnaTools(object):
         self._open_con()
 
     def _open_con(self):
+        '''Open a connectino to the VNA via gpib and confirm that the channel is 16. '''
         print "Opening connection to VNA \n Address of VNA (Should be 16!):"
         chan = g.find("VNA")
         print str(chan) + "\n"
@@ -23,11 +25,13 @@ class VnaTools(object):
         print "\n *** VNA is in %s mode. *** \n" %string
         self.clear()
 
-    def clear(self):
+    def clear(self, TIME = 0.5):
+        '''Clear the VNA buffers. '''
         g.clear(16)
-        time.sleep(0.5)
+        time.sleep(TIME)
         
     def check_parameters(self):
+        '''Check and print the test, S21, S11, S12, S22. '''
         #Checks the parameter setting.
         self.clear()
         g.write(16, "PARA?")
@@ -48,14 +52,14 @@ class VnaTools(object):
             print "You are taking REFLECTION(S22) data."
 
     def turn_calibration_on(self):
-        #Enable calibration. Usually done manually before running this prog.
+        '''Enable calibration. Usually done manually before running this prog.'''
         g.write(16,"CORRON")
         self.clear()
         g.write(16,"CALS1")
         self.clear()
                  
     def check_cal(self):
-        #Checks the CAL setting.
+        '''Checks the CAL setting.'''
         self.clear()
         g.write(16,"CALS?")
         self.clear()
@@ -68,15 +72,18 @@ class VnaTools(object):
              self.calsstring = "CAL" + self.cals
 
     def take_data(self):
+        '''Take a single sweep, wait for the sweep to finish, then record the data. '''
         g.write(16,"SING")
         print "Waiting for data.\n"
         
         self.status_byte()
+        self.print_and_clear_error()
         
         #Recieve data as a long ascii string.
         g.write(16,"OUTPDATA")
+        time.sleep(.5)
+        print "Getting data from VAN \n"
         raw_data = g.read(16,1000000)#read many bytes
-        self.clear() 
         #Parse string to create numerical data matrix.
         data = raw_data.replace("\n",",")
         data = np.fromstring(data,sep=",")
@@ -86,28 +93,29 @@ class VnaTools(object):
         len_data = (len(data)) / 2 
         data_mat = np.zeros((len_data), dtype=complex)
     
-        #Put data into a two column matrix. Also gets the magnitude and phase.
-        for i in range(0,len_data):
-            data_mat[i] = np.complex(data[2*i],data[2*i+1])
+        #Put data into a two column matrix. 
+        data_mat.real = data[1::2]
+        data_mat.imag = data[::2]
         
         return data_mat
 
     def status_byte(self):
-         #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
-         singdone = False
-         while singdone == False:
-             g.write(16,"OUTPSTAT")
-             stat_byte = g.read(16,56)
-             #hex_byte = g.rsp(16)
-             #hex_byte = "%r" %hex_byte
-             #hex_byte = hex_byte.replace("\\","0")
-             #hex_byte = hex_byte.replace("'","")
-             #stat_byte = bin(int(hex_byte,16))
-             #output: '0b10001' when complete
-             if  stat_byte[1] == '1':
-                 singdone = True
+        '''Read the status byte of the VNA and check for the completion of the 
+           single sweep.'''         
+        #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
+        singdone = False
+        while singdone == False:
+            hex = g.rsp(16)
+            hex = "%r" %hex
+            hex = hex.replace('\\','0').replace("'","")  
+            stat = bin(int(hex,16))
+            if len(stat) > 3 and stat[6] =='1':#0b0 = not done, 0b1 = error, obxxxx1 = done
+                singdone = True
+                g.write(16,"CLES")# clear the status byte for next read
+        print "Sweep completed. \n"   
 
     def _make_changes(self):
+        '''Prompt the user if they want to make a change on the VNA panel.'''
         manualchanges = raw_input("Do you want a break to change some settings manually? (y/n): ")
         if manualchanges == 'y':
             print "Wait a moment..."
@@ -118,6 +126,16 @@ class VnaTools(object):
         self._open_con()
 
     def close(self):
+        '''Close the gpib connectin to the VNA. '''
         self.clear()
         g.close(16)
         print "Vna connection closed \n"
+
+    def print_and_clear_error(self):
+        print "Clearing error from VNA. \n"
+        g.write(16,"OUTPERRO")
+        error_msg = g.read(16,1000)
+        print error_msg + '\n'
+            
+            
+        

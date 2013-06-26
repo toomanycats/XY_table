@@ -32,27 +32,28 @@ class Connection(object):
      
     def set_port(self):
         '''Try to open motors on ports and set the primitive class's port string. '''
+        TIME = 1
         port_list = self._inspect_port_log()
-        sleep(0.1)
+        sleep(TIME)
         unique_ports = self._uniq(port_list)
         for port in unique_ports:
             try:
                 if self.x_port is not None and self.y_port is not None:
                     break     
                 self.serial_con.port = '/dev/ttyUSB%s' %port
-                sleep(0.1)
+                sleep(TIME)
                 self.serial_con.open()
-                sleep(0.1)
+                sleep(TIME)
                 sn = self._get_sn()
-                sleep(0.1)
+                sleep(TIME)
                 if sn == '269120375' and self.y_port is None:
                     self.y_port = self.serial_con.port
                     self.serial_con.close()
-                    sleep(0.1)
+                    sleep(TIME)
                 elif sn == '074130197' and self.x_port is None:
                     self.x_port = self.serial_con.port  
                     self.serial_con.close() 
-                    sleep(0.1)     
+                    sleep(TIME)     
             except serial.SerialException:
                 print "%s is not a connected port, trying next.\n" %self.serial_con.port
         if self.y_port is None:

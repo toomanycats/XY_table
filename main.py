@@ -37,7 +37,7 @@ try:
     config.FileNamePrefix = 'test'
     config.FreqStart = 7e9
     config.FreqStop = 15e9
-    config.Freq_num_pts = 101
+    config.Freq_num_pts = 801
     config.TestSet = 'S21' #transmition always for this experiment
     config.X_length = 0.05
     config.Y_length = 0.05
