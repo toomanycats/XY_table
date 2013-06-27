@@ -7,40 +7,55 @@ import code
 import numpy as np
 import traceback
 import matplotlib.pyplot as plt
-import scipy.io as sio
 
 def loop_along_sample(config):
     data_point = 0 # used to name the individual data point files. 
     index_x = 0
     for index_y in xrange(0,config.Num_y_pts):
-        take_data(data_point, index_y, index_x)
+        take_data(data_point, index_y, index_x, config)
         for index_x in xrange(0,config.Num_x_pts):
             motors.mx.move_rel(config.X_res)
-            take_data(data_point, index_y, index_x)
+            take_data(data_point, index_y, index_x, config)
             data_point += 1         
         motors.mx.move_rel(-1*config.X_length)      
         motors.my.move_rel(config.Y_res)   
 
-def take_data(data_point, index_y, index_x):
+def take_data(data_point, index_y, index_x, config):
     print "Taking transmission data. \n"
     # get the raw data as complex pairs
-    data = vna.take_data()
+    data = _take_data(config)
     arraytools.save_data_to_file(data_point, data)
     # get the mag and save to array3d
     mag_data = arraytools.get_magnitude(data)
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
-    im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
-    plt.draw()
-    
+    plottools.plot(array3d[0,:,:])
+    #im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+    #plt.draw()
+
+def _take_data(config):
+    if config.mode == 'sweep':
+        data = vna.take_sweep_data()
+    elif config.mode == 'single':
+        data = vna.take_single_point_data(config.SingleFrequency)
+    else:
+        raise Exception,"%s is not a valid mode. \n" %config.mode
+    return data
+
 ####### START HERE #####
 try:
     config = code_tools.ConfigureDataSet()
+    config.mode = 'sweep'
     config.ExperimentDir = 'test'
     config.FileNamePrefix = 'test'
+    config.SingleFrequency = 14e9 # single freq mode
     config.FreqStart = 7e9
     config.FreqStop = 15e9
-    config.Freq_num_pts = 801
+    # dumb temp fix
+    if config.mode == 'single':
+        config.Freq_num_pts = 1
+    else:
+        config.Freq_num_pts = 801
     config.TestSet = 'S21' #transmition always for this experiment
     config.X_length = 0.05
     config.Y_length = 0.05
@@ -57,19 +72,16 @@ try:
     arraytools = code_tools.ArrayTools(config)
     arraytools.save_readme()
     
-    ### plotting ###
-    array3d = np.zeros((config.Freq_num_pts,config.Num_y_pts,config.Num_x_pts))
-    plt.figure()
-    plt.ion()
-    im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
-    plt.colorbar(im)
+    # make an array to hold the data
+    array3d = arraytools.make_3d_array()
+    # plotting 
+    plottools = code_tools.PlotTools(config)
+    #plottools.plot(array3d[0,:,:])
     
     ## Motor instance 
     motors = motor_tools.Main(config)
-    ## analyzer
+    ## analyzer instance
     vna = vna_tools.VnaTools(config)
-    vna.check_parameters()
-    vna.check_cal()
     
     ### testing origin handling ###
     motors.mx.set_pos_as_sample_origin('x')
@@ -81,7 +93,7 @@ try:
     # save data in binary as numpy ndarray
     np.save(config.FileNamePrefix + '_DataArray',array3d)
     # save as matlab 3D matrix in binary      
-    sio.savemat(config.FileNamePrefix +'_DataArray.mat', {'array3d':array3d}) 
+    arraytools.save_data_to_file(config.FileNamePrefix +'_DataArray.mat', array3d) 
     # return to origin 
     print "returning to origin \n"
     motors.mx.return_to_sample_origin(config.X_origin)

@@ -8,6 +8,7 @@ import numpy as np
 from os import path,makedirs
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import scipy.io as sio
 
 class ConfigureDataSet(object):
     def __init__(self):
@@ -16,6 +17,8 @@ class ConfigureDataSet(object):
         self.DirectoryRoot = '/media/Data'
         self.ExperimentDir = ''
         self.FileNamePrefix = ''
+        self.mode = ''
+        self.SingleFrequency = 0
         self.FreqStart = 0
         self.FreqStop = 0
         self.Freq_num_pts = 0
@@ -138,10 +141,15 @@ Origin = %(origin)s
         file_name = "%(name_prefix)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix
                                                         ,'file_num':str(data_point).zfill(5)}
         fullpath = path.join(self.config.DirectoryRoot, self.config.ExperimentDir, file_name)    
-        np.savetxt(fullpath, data)
+        sio.savemat(fullpath, {'data':data})
           
         print "File Saved Successfully."
 
+    def make_3d_array(self):
+        array = np.zeros((self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))
+        
+        return array
+    
     def get_magnitude(self, data):
         '''Takes col of complex numbers and returns col of mag. '''
         mag_data = np.zeros(data.shape, dtype=float)
@@ -191,17 +199,38 @@ Origin = %(origin)s
         dim3 = str(self.config.Freq_num_pts)
         fname = "%s_flattened_%s_%s_%s.txt " %(self.config.FileNamePrefix,dim1,dim2,dim3)      
         fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,fname)
-        np.savetxt(fullpath, data)      
-                
+        np.savetxt(fullpath, data)    
+                                  
 class PlotTools(object):
     def __init__(self, Config):
         self.config = Config 
-        pass
-#       self.config = PlotTools.config     
-#       im = plt.imshow#(slice, interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
-#       plt.colorbar(im)
-#        
+        plt.figure()
+        plt.ion()    
+        dummy = np.zeros((self.config.Num_x_pts,self.config.Num_y_pts))
+        im = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
+        plt.colorbar(im)   
+               
     def plot(self,slice):
-        pass
-#       im(slice, interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
-#       plt.draw()  
+        im = plt.imshow(slice, interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        plt.draw()
+        
+        
+    def close_plot(self):
+        plt.close('all')
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

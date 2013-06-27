@@ -18,11 +18,16 @@ class VnaTools(object):
         chan = g.find("VNA")
         print str(chan) + "\n"
         self.check_for_errors()# head off synxtax errors and corrupted buffer
-        #self.clear()
         g.write(16,"FORM4")#set up ascii format    
-        time.sleep(0.5)
-        #self.clear()       
+        time.sleep(0.5)      
+        self.check_remote_or_local()
+        self.check_average_on()
+        self.check_cal()
+        self.check_parameters()
+        
+    def check_remote_or_local(self):    
         g.write(16,"SYSB?")
+        time.sleep(0.5)
         string = g.read(16,50).strip("\n")
         print "\n *** VNA is in %s mode. *** \n" %string
 
@@ -34,9 +39,8 @@ class VnaTools(object):
     def check_parameters(self):
         '''Check and print the test, S21, S11, S12, S22. '''
         #Checks the parameter setting.
-        self.clear()
         g.write(16, "PARA?")
-        self.clear()
+        time.sleep(0.5)
         param = g.read(16, 100)
         self.param = param.replace('\n','').replace('"','')
         if self.param == 'S12':
@@ -58,20 +62,41 @@ class VnaTools(object):
         self.clear()
         g.write(16,"CALS1")
         self.clear()
+
+    def check_average_on(self):
+        #self.clear()
+        g.write(16,"AVER?")
+        self.aver_state = g.read(16,100)[0]
+        if self.aver_state == '1':
+            print "averaging is on. \n"
+        elif self.aver_state == '0':
+            print "averaging is off. \n"    
                  
     def check_cal(self):
         '''Checks the CAL setting.'''
-        self.clear()
+        #self.clear()
         g.write(16,"CALS?")
+        time.sleep(0.5)
         self.cals = g.read(16, 100)[0] 
         if self.cals=='0':
              print "Calibration is OFF"
-             self.calsstring = "no cal"
+             self.calsstring = "no calibration is being used."
         else:
              print "You are under CAL set " + self.cals
              self.calsstring = "CAL" + self.cals
 
-    def take_data(self):
+    def average_on(self):
+        g.write(16,"AVERON")
+
+    def take_single_point_data(self, freq):
+        self.check_for_errors()
+        g.write(16,"FREQ;SINP;CENT,%f" %freq)
+        self.status_byte()
+        data_mat = self._read_data()
+        
+        return data_mat[0]
+
+    def take_sweep_data(self):
         '''Take a single sweep, wait for the sweep to finish, then record the data. '''
         self.check_for_errors()
         g.write(16,"SING")
@@ -80,11 +105,16 @@ class VnaTools(object):
         self.status_byte()
         self._print_and_clear_error()
         
+        data_mat = self._read_data()
+      
+        return data_mat
+ 
+    def _read_data(self, len_data = 1000000):
         #Recieve data as a long ascii string.
         g.write(16,"OUTPDATA")
         print "Getting data from analyzer \n"
         time.sleep(0.5)
-        raw_data = g.read(16,1000000)#read many bytes
+        raw_data = g.read(16,len_data)#read many bytes
         #Parse string to create numerical data matrix.
         data = raw_data.replace("\n",",")
         data = np.fromstring(data,sep=",")
@@ -113,7 +143,7 @@ class VnaTools(object):
             hex = hex.replace('\\','0').replace("'","")  
             stat = int(hex,16)
             print 'status byte: ' + str(stat) + '\n'
-            if stat== 17:# and stat[6] =='1':#0b0 = not done, 0b1 = error, obxxxx1 = done
+            if stat > 1:#stat == 17 or stat == 16:
                 singdone = True
                 g.write(16,"CLES")# clear the status byte for next read
                 time.sleep(0.25)
