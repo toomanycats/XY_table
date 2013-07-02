@@ -14,11 +14,11 @@ def loop_along_sample(config):
     for index_y in xrange(0,config.Num_y_pts):
         take_data(data_point, index_y, index_x, config)
         for index_x in xrange(0,config.Num_x_pts):
-            motors.mx.move_rel(config.X_res)
+            mx.move_rel(config.X_res)
             take_data(data_point, index_y, index_x, config)
             data_point += 1         
-        motors.mx.move_rel(-1*config.X_length)      
-        motors.my.move_rel(config.Y_res)   
+        mx.move_rel(-1*config.X_length)      
+        my.move_rel(config.Y_res)   
 
 def take_data(data_point, index_y, index_x, config):
     print "Taking transmission data. \n"
@@ -79,13 +79,15 @@ try:
     #plottools.plot(array3d[0,:,:])
     
     ## Motor instance 
-    motors = motor_tools.Main(config)
+    mx,my = motor_tools.Connection(config).connect_to_ports()
+    mx.main()
+    my.main()
     ## analyzer instance
     vna = vna_tools.VnaTools(config)
     
     ### testing origin handling ###
-    motors.mx.set_pos_as_sample_origin('x')
-    motors.my.set_pos_as_sample_origin('y')
+    mx.set_pos_as_sample_origin('x')
+    my.set_pos_as_sample_origin('y')
     
     # get to work on sample
     loop_along_sample(config)
@@ -96,12 +98,12 @@ try:
     arraytools.save_data_to_file(config.FileNamePrefix +'_DataArray.mat', array3d) 
     # return to origin 
     print "returning to origin \n"
-    motors.mx.return_to_sample_origin(config.X_origin)
-    motors.my.return_to_sample_origin(config.Y_origin)
+    mx.return_to_sample_origin(config.X_origin)
+    my.return_to_sample_origin(config.Y_origin)
     
     # close all devices and free ports.
-    motors.mx.close()
-    motors.my.close()
+    mx.close()
+    my.close()
     vna.close()
 
 except ValueError:
@@ -114,8 +116,8 @@ except:
     tb = traceback.format_exc()
     print tb
     try:
-        motors.mx.close()
-        motors.my.close()
+        mx.close()
+        my.close()
         vna.close()
     except:
         pass
