@@ -45,7 +45,7 @@ def _take_data(config):
 ####### START HERE #####
 try:
     config = code_tools.ConfigureDataSet()
-    config.mode = 'sweep'
+    config.mode = 'single'
     config.ExperimentDir = 'test'
     config.FileNamePrefix = 'test'
     config.SingleFrequency = 14e9 # single freq mode

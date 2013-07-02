@@ -91,7 +91,7 @@ class VnaTools(object):
     def take_single_point_data(self, freq):
         self.check_for_errors()
         g.write(16,"FREQ;SINP;CENT,%f" %freq)
-        self.status_byte()
+        self.status_byte(2)
         data_mat = self._read_data()
         
         return data_mat[0]
@@ -102,7 +102,7 @@ class VnaTools(object):
         g.write(16,"SING")
         print "Waiting for data.\n"
         
-        self.status_byte()
+        self.status_byte(16)
         self._print_and_clear_error()
         
         data_mat = self._read_data()
@@ -130,20 +130,19 @@ class VnaTools(object):
         
         return data_mat
 
-    def status_byte(self):
+    def status_byte(self, code):
         '''Read the status byte of the VNA and check for the completion of the 
-           single sweep.'''         
-        #Get the statusbyte and look at just the 5th bit to determine when sweep has finished
+           single sweep. '''         
         singdone = False
         while singdone == False:
             time.sleep(0.25)
             hex = g.rsp(16)
             time.sleep(0.25)
-            hex = "%r" %hex
-            hex = hex.replace('\\','0').replace("'","")  
+            hex = "%r" %hex # cast into raw string
+            hex = hex.replace('\\','0').strip("'") 
             stat = int(hex,16)
-            print 'status byte: ' + str(stat) + '\n'
-            if stat > 1:#stat == 17 or stat == 16:
+            #print 'status byte: ' + str(stat) + '\n'
+            if stat >= code:
                 singdone = True
                 g.write(16,"CLES")# clear the status byte for next read
                 time.sleep(0.25)
