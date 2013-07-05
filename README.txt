@@ -1,6 +1,6 @@
 This Python module is for controlling an HP8510C vector network analyzer with a Debian system.
 I'm currently using it with Ubuntu 10.04 and the kernel version appears to make a difference.
-I'll update this readme with the version on next commit.
+Kernel 2.6.xx works, but upgrading to 3.x caused a failure. 
 
 I use a National Instruments GPIB interface card and the linux-gpib libary from sourceforge.org.
 
@@ -18,4 +18,3 @@ Cheers,
 dpc
 
 
-dpcuneo@gmail.com 
