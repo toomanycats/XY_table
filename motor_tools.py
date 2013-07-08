@@ -103,8 +103,22 @@ class Motor(Connection):
         self._set_var('LM', 2)
         self._set_var('P',0)
         self._set_var('A',51200)
+
+    def _check_reached_limit_switch(self):
+        '''Query the motor to determine if either limit switch has been reached. Returns 
+        True is a limit has been tripped or False if it has not. '''
+        error_status = False
+        self.con.write('PR ER\r\n')#check if reached limit switch
+        sleep(0.07)
+        pat = '83\r\n|84\r\n' # boolean "or" in the regex
+        out_put = self._loop_structure(pat)
+        if out_put == '83\r\n' or out_put == '84\r\n':
+            error_status = True    
+        
+        return error_status
     
     def clear_error(self):
+        '''Query the motor for errors, return the error code and clear the errors. '''
         print "clearing errors \n"
         self.write('PR ER')
         sleep(0.1)
@@ -112,7 +126,8 @@ class Motor(Connection):
         sleep(0.1)
         self.con.readlines()
 
-    def set_step(self, step):
+    def _set_step(self, step):
+        '''Set the number of steps that the motor uses for a full rotation. '''
         if not isinstance(step,int):
             print "Enter an integer only."
             return
@@ -120,7 +135,8 @@ class Motor(Connection):
         self.CurrentPos = self._calculate_pos(step)
     
     def _calculate_pos(self, steps):
-        '''Current step aggregates automatically. '''
+        '''Calculate the position of the motor using the conversion factors.
+        X steps * 1 rev/Y steps * 5 mm/1 rev '''
         CurrentPos =  steps * (1.0/(self._steps_per_rev[str(self.MicroStep)])) * self._meters_per_rev
         '''position = X steps * 1 rev/Y steps * 5 mm/1 rev '''
 
@@ -147,7 +163,7 @@ class Motor(Connection):
         return int(output.strip('\r\n'))
 
     def _calc_steps(self,linear_dist):
-        '''How many steps it takes to get somewhere.'''
+        '''How many steps it takes to get to a linear dist input.'''
         steps = float(linear_dist)/self._meters_per_rev * float((self._steps_per_rev[str(self.MicroStep)]))
          
         return int(round(steps)) 
@@ -170,12 +186,16 @@ class Motor(Connection):
             sleep(0.07)
             current_pos = float(self._calculate_pos(current_step))
             #print current_pos
-            self.con.write('PR ER\r\n')#check if reached limit switch
-            sleep(0.07)
-            pat = '83\r\n|84\r\n'
-            error_status = self._loop_structure(pat)
-            if abs(current_pos - target) < 1e-6 or error_status == '83\r\n':
+            error_status = self._check_reached_limit_switch()
+            if abs(current_pos - target) < 1e-6 or error_status:
                 Flag = True
+
+    def return_home(self):
+        '''Return the motor to home position, which is at the limit switch in the bottom left corner. '''
+        self.con.write('SL 51200')# 5mm per second
+        error_status = False
+        while not error_status:
+            error_status = self._check_reached_limit_switch
 
     def move_rel(self, linear_dist):
         '''Tell the motor to move a linear distance as a relative position.'''
