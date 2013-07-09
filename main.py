@@ -91,6 +91,9 @@ try:
     phase_array = arraytools.make_3d_array()
     # plotting 
     plottools = code_tools.PlotTools(config)
+
+    ### test the load from files method
+    test = code_tools.ArrayTools(config).load_data_files('mag')
         
     ## Motor instance 
     mx,my = motor_tools.Connection(config).connect_to_ports()

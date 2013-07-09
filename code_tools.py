@@ -34,6 +34,8 @@ class ConfigureDataSet(object):
         self.Num_y_pts = 0
         self.x_port = ''
         self.y_port = ''
+        self.mag_point_dir = ''
+        self.phase_point_dir = ''
         
     def make_sub_dirs(self):
         p = path.join(self.DirectoryRoot,self.ExperimentDir)
@@ -134,7 +136,8 @@ Y_length = %(y_len)s
 Y_res = %(y_res)s
 Username = %(user)s
 Date = %(date)s
-Origin = %(origin)s
+X Origin = %(x_origin)s
+Y Origin = %(y_origin)s
  ''' %{'path':path.join(self.config.DirectoryRoot,self.config.ExperimentDir),
        'freq_start':self.config.FreqStart,
        'freq_stop':self.config.FreqStop,
@@ -145,7 +148,9 @@ Origin = %(origin)s
        'y_res':self.config.Y_res,
        'user':self.config.Username,
        'date':self.config.Date,
-       'origin':self.config.Origin}
+       'x_origin':self.config.X_origin,
+       'y_origin':self.config.Y_origin
+       }
 
         fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_README.dat')
         f = open(fullpath,'w')
@@ -202,6 +207,13 @@ Origin = %(origin)s
     def load_data_files(self, type):
         '''loads all data point files into a 1D array of either mag or phase data. 
         Use reshape_1D_to_3D() to get back a numpy 3D array. Returns the 1D data array.'''
+    
+        if type == 'mag':
+            base_dir = self.config.mag_point_dir
+        elif type == 'phase':
+            base_dir = self.config.phase_point_dir    
+        else:
+            raise Exception, "Type was not a valid choice of 'mag' or 'phase'. "    
 
         num_pts = self.config.Num_x_pts * self.config.Num_y_pts
         data = np.zeros((self.config.Freq_num_pts,num_pts))
@@ -210,11 +222,11 @@ Origin = %(origin)s
             for j in xrange(0,self.config.Num_x_pts - 1):
                 file_num = i * self.config.Num_x_pts + j
                 file_name = "%(name_prefix)s_%(type)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix,
-                                                        'file_num':str(data_point).zfill(5),
+                                                        'file_num':str(file_num).zfill(5),
                                                         'type':type
                                                          }
                 
-                path_str = path.join(self.config.DirectoryRoot, self.config.ExperimentDir, file_name)
+                path_str = path.join(base_dir, file_name)
                 data[:,file_num] = np.loadtxt(path_str,dtype='float',comments='#',delimiter='\n')
                 print "file: %i loaded into array\n" %file_num 
         
