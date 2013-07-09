@@ -24,12 +24,22 @@ def take_data(data_point, index_y, index_x, config):
     print "Taking transmission data. \n"
     # get the raw data as complex pairs
     data = _take_data(config)
-    arraytools.save_data_to_file(data_point, data)
-    # get the mag and save to array3d
+    # get the mag from the raw data
     mag_data = arraytools.get_magnitude(data)
-    array3d[:,index_y, index_x] = mag_data
-    ### testing, would like a handful of Z steps plotted
-    plottools.plot(array3d[0,:,:])
+    # send to mag_array for in-vivo plotting
+    mag_array[:,index_y, index_x] = mag_data
+    # save the mag data from a single point to it's own file
+        # in the Single_Point dir
+    arraytools.save_data_to_file(data_point, mag_data, 'mag')
+    # get the phase from the raw data 
+    phase_data = arraytools.get_phase(data)
+    # send the phase data to the in-vivo phase_array
+    phase_array[:,index_y,index_x] = phase_data
+    # save the phase data from a single point to it's own file
+        # in the Single_Point dir
+    arraytools.save_data_to_file(data_point, mag_data, 'phase')    
+    # plot the in-vivo data
+    plottools.plot(mag_array, phase_array)
 
 def _take_data(config):
     if config.mode == 'sweep':
@@ -50,7 +60,7 @@ def set_pos_as_sample_origin():
 ####### START HERE #####
 try:
     config = code_tools.ConfigureDataSet()
-    config.mode = 'single'
+    config.mode = 'sweep'
     config.ExperimentDir = 'test'
     config.FileNamePrefix = 'test'
     config.SingleFrequency = 14e9 # single freq mode
@@ -60,7 +70,7 @@ try:
     if config.mode == 'single':
         config.Freq_num_pts = 1
     else:
-        config.Freq_num_pts = 801
+        config.Freq_num_pts = 201
     config.TestSet = 'S21' #transmition always for this experiment
     config.X_length = 0.05
     config.Y_length = 0.05
@@ -71,18 +81,17 @@ try:
     config.x_port = '/dev/ttyUSB0'
     config.y_port = '/dev/ttyUSB1'
     config.set_xy_num_pts()
-    config.make_experiment_dir()
-    
+    config.make_sub_dirs()
     # save the readme file to the directory
     arraytools = code_tools.ArrayTools(config)
     arraytools.save_readme()
     
     # make an array to hold the data
-    array3d = arraytools.make_3d_array()
+    mag_array =   arraytools.make_3d_array()
+    phase_array = arraytools.make_3d_array()
     # plotting 
     plottools = code_tools.PlotTools(config)
-    #plottools.plot(array3d[0,:,:])
-    
+        
     ## Motor instance 
     mx,my = motor_tools.Connection(config).connect_to_ports()
     mx.main()
@@ -96,11 +105,9 @@ try:
     # get to work on sample
     loop_along_sample(config)
     
-    # save data in binary as numpy ndarray
-    np.save(config.FileNamePrefix + '_DataArray',array3d)
     # save as matlab 3D matrix in binary      
-    arraytools.save_data_to_file(config.FileNamePrefix +'_DataArray.mat', array3d) 
-    # return to origin 
+    #arraytools.save_data_to_file(config.FileNamePrefix +'_DataArray.mat', array3d) 
+
     print "returning to origin \n"
     mx.return_to_sample_origin(config.X_origin)
     my.return_to_sample_origin(config.Y_origin)
@@ -112,8 +119,8 @@ try:
 
 except ValueError:
     print """A value error was thrown. It is likely that the Freq_num_pts was 
-changed and does not match the values used in to create the variable "array3d" which 
-holds the data for the in-vivo plots and finally for saving."""
+changed and does not match the values used in to create the variables "mag_array" and "phase_array" which 
+holds the data for the in-vivo plots."""
 
 except:
     print "Exception raised, closing gpib and serial connections, emailing admin."

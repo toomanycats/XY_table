@@ -22,7 +22,7 @@ class ConfigureDataSet(object):
         self.FreqStart = 0
         self.FreqStop = 0
         self.Freq_num_pts = 0
-        self.TestSet = 'S21' #transmition always for this experiment
+        self.TestSet = 'S21' #transmission always for this experiment
         self.X_length = 0
         self.Y_length = 0
         self.X_res = 0
@@ -34,15 +34,24 @@ class ConfigureDataSet(object):
         self.Num_y_pts = 0
         self.x_port = ''
         self.y_port = ''
+        
+    def make_sub_dirs(self):
+        p = path.join(self.DirectoryRoot,self.ExperimentDir)
+        if not path.exists(p):
+            makedirs(p)
+        
+        self.mag_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Mag')
+        if not path.exists(self.mag_point_dir):
+            makedirs(self.mag_point_dir)
+
+        self.phase_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Phase')
+        if not path.exists(self.phase_point_dir):
+            makedirs(self.phase_point_dir)  
+        
 
     def set_xy_num_pts(self):
         self.Num_x_pts = int(np.ceil(self.X_length / self.X_res))
         self.Num_y_pts = int(np.ceil(self.Y_length / self.Y_res))
-        
-    def make_experiment_dir(self):
-            p = path.join(self.DirectoryRoot,self.ExperimentDir)
-            if not path.exists(p):
-                makedirs(p)
 
 class CodeTools(object):
     '''Contains methods used for the combination of motor tools and vna tools '''    
@@ -127,25 +136,47 @@ Username = %(user)s
 Date = %(date)s
 Origin = %(origin)s
  ''' %{'path':path.join(self.config.DirectoryRoot,self.config.ExperimentDir),
-       'freq_start':self.config.FreqStart,'freq_stop':self.config.FreqStop,
-       'freq_res':self.config.Freq_num_pts,'x_len':self.config.X_length,'y_len':self.config.Y_length,
-       'x_res':self.config.X_res,'y_res':self.config.Y_res,'user':self.config.Username,
-       'date':self.config.Date,'origin':self.config.Date}
+       'freq_start':self.config.FreqStart,
+       'freq_stop':self.config.FreqStop,
+       'freq_res':self.config.Freq_num_pts,
+       'x_len':self.config.X_length,
+       'y_len':self.config.Y_length,
+       'x_res':self.config.X_res,
+       'y_res':self.config.Y_res,
+       'user':self.config.Username,
+       'date':self.config.Date,
+       'origin':self.config.Origin}
 
         fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_README.dat')
         f = open(fullpath,'w')
         f.write(header_template)
         f.close()
 
-    def save_data_to_file(self, data_point, data):  
-        file_name = "%(name_prefix)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix
-                                                        ,'file_num':str(data_point).zfill(5)}
-        fullpath = path.join(self.config.DirectoryRoot, self.config.ExperimentDir, file_name)    
-        sio.savemat(fullpath, {'data':data})
+    def save_data_to_file(self, data_point, data, type):  
+        '''This method saves each data point vector into a text file. The arg 'type'
+        is 'mag' or 'phase' . The data type arg is used to chronologically number the points for
+        a later reconstruction. The files are saved into their respective sub dirs, Mag and Phase.''' 
+        
+        file_name = "%(name_prefix)s_%(type)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix
+                                                        ,'file_num':str(data_point).zfill(5),
+                                                        'type':type
+                                                        }
+        if type == 'mag':
+            fullpath = path.join(self.config.mag_point_dir, file_name)    
+        elif type == 'phase':
+            fullpath = path.join(self.config.phase_point_dir, file_name) 
+        else:
+            raise Exception, "You did not supply an accepted type of 'mag' or 'phase'. "
+        
+        np.savetxt(fullpath, data)
           
-        print "File Saved Successfully."
+        print "File Saved Successfully.\n"
 
     def make_3d_array(self):
+        '''Initialize a numpy 3D or 2D array for storing Mag or Phase data. This is for using PYthon to
+        view the data during the experiment. The lab protocol for storing the data for outside analysis is to
+        save all the real and imaginary parts as separate long column of text values. '''
+        
         array = np.zeros((self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))
         
         return array
@@ -160,7 +191,7 @@ Origin = %(origin)s
     def get_phase(self,data):
         '''Takes cols of complex and returns col of phase '''
         phase_data = np.zeros(data.shape,dtype=float)
-        phase_data = np.angle(np.real(data),np.imag(data))
+        phase_data = np.angle(data, False)# no degrees only radians
 
         return phase_data
    
@@ -168,16 +199,22 @@ Origin = %(origin)s
         Deltafreq = (self.config.freqstop - self.config.freqstart) / float(self.config.Freq_num_pts)
         freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
 
-    def load_data_files(self):
-        '''loads data files into a 1D array of data. Use reshape_1D_to_3D() to get back the 3D array'''
+    def load_data_files(self, type):
+        '''loads all data point files into a 1D array of either mag or phase data. 
+        Use reshape_1D_to_3D() to get back a numpy 3D array. Returns the 1D data array.'''
+
         num_pts = self.config.Num_x_pts * self.config.Num_y_pts
         data = np.zeros((self.config.Freq_num_pts,num_pts))
+
         for i in xrange(0,self.config.Num_x_pts - 1):
             for j in xrange(0,self.config.Num_x_pts - 1):
                 file_num = i * self.config.Num_x_pts + j
-                file_name = "%(prefix)s_%(filenumber)s.dat" %{'prefix':self.config.FileNamePrefix,
-                                                            'filenumber':str(file_num).zfill(5)}
-                path_str = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,file_name)
+                file_name = "%(name_prefix)s_%(type)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix,
+                                                        'file_num':str(data_point).zfill(5),
+                                                        'type':type
+                                                         }
+                
+                path_str = path.join(self.config.DirectoryRoot, self.config.ExperimentDir, file_name)
                 data[:,file_num] = np.loadtxt(path_str,dtype='float',comments='#',delimiter='\n')
                 print "file: %i loaded into array\n" %file_num 
         
@@ -210,10 +247,15 @@ class PlotTools(object):
         im = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
         plt.colorbar(im)   
                
-    def plot(self,slice):
-        im = plt.imshow(slice, interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+    def plot(self, mag, phase, z=0):
+        '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
+        xy plane you want to plot. For single point mode, z = 0 (default), for sweep you must choose. '''
+        plt.subplot(1,2,1)
+        im = plt.imshow(mag[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        plt.subplot(1,2,2)
+        im = plt.imshow(phase[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+
         plt.draw()
-        
         
     def close_plot(self):
         plt.close('all')

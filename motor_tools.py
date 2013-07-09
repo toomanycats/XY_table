@@ -14,7 +14,7 @@ class Connection(object):
     def _get_sn(self, con):
         '''Query the motor for it's serial number. '''
         con.write('PR SN\r\n')
-        sleep(0.2)
+        sleep(0.5)
         pat = '[0-9]{9}\r\n'
         out = self._loop_structure(pat, con)
         out = out.replace('\r\n','')
@@ -53,12 +53,14 @@ class Connection(object):
             echos all sent commands and returns values as a list. This method uses regex to 
             sift out the desired information for that list. Notice the pattern sent in is a
             regex pattern pertinent to the task at hand.'''
-            sleep(0.1)
+            sleep(0.5)
             re_obj = re.compile(pat)
             readback = con.readlines()
+            sleep(0.5)
             for item in readback:
                 if re_obj.match(item) is not None:
                     return item
+            
             raise Exception, "Pattern match failed in loop structure to get serial number."
 
     def assign_serial_num(self, sn, x_port, y_port, con):
