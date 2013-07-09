@@ -96,10 +96,12 @@ class Motor(Connection):
                          }
         
     def main(self):
+        '''Sets the basic parameters of the motor. '''
 #         self.open()
         self.clear_error()
         self.MicroStep = self._get_ms()
-        self._set_var('S1','2,0,0')
+        self._set_var('S1','3,0,0') # limit switch for home 
+        self._set_var('S2','2,0,0')# limit switch for farthest end
         self._set_var('LM', 2)
         self._set_var('P',0)
         self._set_var('A',51200)
@@ -195,7 +197,7 @@ class Motor(Connection):
         self.con.write('SL 51200')# 5mm per second
         error_status = False
         while error_status == False:
-            error_status = self._check_reached_limit_switch
+            error_status = self._check_reached_limit_switch()
         self.write('SL 0') # stop the slew movement
         sleep(0.7)
         self.clear_error()
@@ -346,16 +348,7 @@ class Motor(Connection):
         steps = self._calc_steps(origin)
         self.con.write('MA %i\r\n' %steps)
     
-    def set_pos_as_sample_origin(self, axis):
-        '''Arg is the axis name, 'x' or 'y'. Set this position as the origin of the sample.
-        Recall: steps are always aggregate, and the zeros position is always defined wrt to the 
-        'HOME' position set by the limit switches. '''
-        axis = axis.lower()
-        if axis == 'x':
-            self.config.X_origin = self._calculate_pos(self._CurrentStep)
-        elif axis == 'y':
-            self.config.Y_origin = self._calculate_pos(self._CurrentStep)
-
+    
 
                 
            

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+#TODO: move all the methods here to code_tools
 import motor_tools
 import vna_tools
 import code_tools
@@ -30,8 +30,6 @@ def take_data(data_point, index_y, index_x, config):
     array3d[:,index_y, index_x] = mag_data
     ### testing, would like a handful of Z steps plotted
     plottools.plot(array3d[0,:,:])
-    #im = plt.imshow(array3d[50,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
-    #plt.draw()
 
 def _take_data(config):
     if config.mode == 'sweep':
@@ -41,6 +39,13 @@ def _take_data(config):
     else:
         raise Exception,"%s is not a valid mode. \n" %config.mode
     return data
+
+def set_pos_as_sample_origin():
+        '''Arg is the axis name, 'x' or 'y'. Set this position as the origin of the sample.
+        Recall: steps are always aggregate, and the zeros position is always defined wrt to the 
+        'HOME' position set by the limit switches. '''
+        config.X_origin = mx._calculate_pos(mx._CurrentStep)
+        config.Y_origin = my._calculate_pos(my._CurrentStep)
 
 ####### START HERE #####
 try:
@@ -86,8 +91,7 @@ try:
     vna = vna_tools.VnaTools(config)
     
     ### testing origin handling ###
-    mx.set_pos_as_sample_origin('x')
-    my.set_pos_as_sample_origin('y')
+    set_pos_as_sample_origin()
     
     # get to work on sample
     loop_along_sample(config)
