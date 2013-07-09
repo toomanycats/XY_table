@@ -116,17 +116,23 @@ class Motor(Connection):
         out_put = self._loop_structure(pat)
         if out_put == '83\r\n' or out_put == '84\r\n':
             error_status = True    
-        
+        if out_put == '84\r\n':
+            print "Reached limit switch at HOME. \n"
+        elif out_put == '83\r\n':
+            print "Reached limit switch at farthest end. \n"    
+
         return error_status
     
     def clear_error(self):
         '''Query the motor for errors, return the error code and clear the errors. '''
         print "clearing errors \n"
-        self.write('PR ER')
-        sleep(0.1)
-        self.write('PR EF')
-        sleep(0.1)
-        self.con.readlines()
+        self._set_var('ER', 0, True)
+        self._set_var('ER', 0, True)
+#         self.write('PR ER')
+#         sleep(0.1)
+#         self.write('PR EF')
+#         sleep(0.1)
+#         self.con.readlines()
 
     def _set_step(self, step):
         '''Set the number of steps that the motor uses for a full rotation. '''
@@ -171,12 +177,13 @@ class Motor(Connection):
         return int(round(steps)) 
 
     def _check_limits(self, steps):
-         new_pos = self.CurrentPos + self._calculate_pos(steps)
-         if new_pos >= self._LIMIT_METERS:
-             print "You have asked for a new position that will exceed the LIMIT variable. \n"
-             return True
-         else:
-             return False
+        '''Idea s to not allow a movement far past the sample boundary...not using it anymore. '''
+        new_pos = self.CurrentPos + self._calculate_pos(steps)
+        if new_pos >= self._LIMIT_METERS:
+            print "You have asked for a new position that will exceed the LIMIT variable. \n"
+            return True
+        else:
+            return False
   
     def _query_pos(self, target):
         '''Used as a poll of the location of a motor, so that the program can spit out the 
@@ -194,8 +201,8 @@ class Motor(Connection):
 
     def return_home(self):
         '''Return the motor to home position, which is at the limit switch in the bottom left corner. '''
-        self.con.write('SL 51200')# 5mm per second
         error_status = False
+        self.con.write('SL -51200')# 5mm per second
         while error_status == False:
             error_status = self._check_reached_limit_switch()
         self.write('SL 0') # stop the slew movement
@@ -205,11 +212,6 @@ class Motor(Connection):
     def move_rel(self, linear_dist):
         '''Tell the motor to move a linear distance as a relative position.'''
         steps = self._calc_steps(linear_dist)
-        #print "steps: %i " %steps ;print "\n"
-        if self._check_limits(steps):# True is a fail on limits
-            print "Attemping to move outside limits \n"
-            return
-        #self.flush()
         sleep(0.1)
         self.write('MR %i' %steps)
         self._query_pos(linear_dist + self.CurrentPos)
