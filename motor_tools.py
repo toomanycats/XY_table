@@ -194,8 +194,11 @@ class Motor(Connection):
         '''Return the motor to home position, which is at the limit switch in the bottom left corner. '''
         self.con.write('SL 51200')# 5mm per second
         error_status = False
-        while not error_status:
+        while error_status == False:
             error_status = self._check_reached_limit_switch
+        self.write('SL 0') # stop the slew movement
+        sleep(0.7)
+        self.clear_error()
 
     def move_rel(self, linear_dist):
         '''Tell the motor to move a linear distance as a relative position.'''
