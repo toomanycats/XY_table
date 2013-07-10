@@ -94,6 +94,13 @@ class VnaTools(object):
         g.write(16,"FREQ;SINP;CENT,%f" %freq)
         self.status_byte(2)
         data_mat = self._read_data()
+        
+        if data_mat[0] != data_mat[1]:
+            raise Exception, """The VNA was not already set into single point mode.
+I can tell b/c the VNA should return an array of data whose length is set to the number
+of points on the menu, e.g. 801, but all values of the points should be the same. If you forgot to manually 
+put the VNA into single point mode, then it will appear on the VNA screen to take a single point, but 
+it is not clear that this is truly the case. I know it's annoying... """
         # one element of a np array is an np scalar and
         # causes problems with np.savetxt since that method wants
         # a array with shape != ()

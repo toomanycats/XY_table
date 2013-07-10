@@ -69,6 +69,7 @@ try:
     config.FreqStop = 15e9
     # dumb temp fix
     if config.mode == 'single':
+        print "The VNA must already be in Single sweep mode on.\n"
         config.Freq_num_pts = 1
     else:
         config.Freq_num_pts = 201
