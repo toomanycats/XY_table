@@ -205,8 +205,8 @@ Y Origin = %(y_origin)s
         freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
 
     def load_data_files(self, type):
-        '''loads all data point files into a 1D array of either mag or phase data. 
-        Use reshape_1D_to_3D() to get back a numpy 3D array. Returns the 1D data array.'''
+        '''loads all data point files into a 2D array of either mag or phase data.The return has
+        columns of row data. Use reshape_1D_to_3D() to get back a numpy 3D array.'''
     
         if type == 'mag':
             base_dir = self.config.mag_point_dir
@@ -215,20 +215,19 @@ Y Origin = %(y_origin)s
         else:
             raise Exception, "Type was not a valid choice of 'mag' or 'phase'. "    
 
-        num_pts = self.config.Num_x_pts * self.config.Num_y_pts
-        data = np.zeros((self.config.Freq_num_pts,num_pts))
+        num_files = self.config.Num_x_pts * self.config.Num_y_pts
+        data = np.zeros((self.config.Freq_num_pts, num_files))
 
-        for i in xrange(0,self.config.Num_x_pts - 1):
-            for j in xrange(0,self.config.Num_x_pts - 1):
-                file_num = i * self.config.Num_x_pts + j
-                file_name = "%(name_prefix)s_%(type)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix,
-                                                        'file_num':str(file_num).zfill(5),
-                                                        'type':type
-                                                         }
-                
-                path_str = path.join(base_dir, file_name)
-                data[:,file_num] = np.loadtxt(path_str,dtype='float',comments='#',delimiter='\n')
-                print "file: %i loaded into array\n" %file_num 
+        for file_num in xrange(0, num_files):
+           
+            file_name = "%(name_prefix)s_%(type)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix,
+                                                                      'file_num':str(file_num).zfill(5),
+                                                                      'type':type
+                                                                      }
+            
+            path_str = path.join(base_dir, file_name)
+            data[:,file_num] = np.loadtxt(path_str,dtype='float',comments='#',delimiter='\n')
+            print "file: %i loaded into array\n" %file_num 
         
         return data    
 

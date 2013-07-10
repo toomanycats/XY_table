@@ -93,7 +93,9 @@ try:
     plottools = code_tools.PlotTools(config)
 
     ### test the load from files method
-    test = code_tools.ArrayTools(config).load_data_files('mag')
+    codetools = code_tools.ArrayTools(config)
+    loaded_data = codetools.load_data_files('mag')
+    array3d = codetools.reshape_1D_to_3D(loaded_data)
         
     ## Motor instance 
     mx,my = motor_tools.Connection(config).connect_to_ports()
