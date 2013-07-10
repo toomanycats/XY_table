@@ -125,6 +125,8 @@ class ArrayTools(object):
         self.config = Config
   
     def save_readme(self):
+        '''Savess a text file named "README" in the experiment roor directory that 
+        contains the vitals of the settings. Parse this file for import info. '''
         header_template = '''
 Directory = %(path)s
 FreqStart = %(freq_start)s
@@ -157,23 +159,31 @@ Y Origin = %(y_origin)s
         f.write(header_template)
         f.close()
 
-    def save_data_to_file(self, data_point, data, type):  
+    def save_data_to_file(self, data_point, data, dtype):  
         '''This method saves each data point vector into a text file. The arg 'type'
         is 'mag' or 'phase' . The data type arg is used to chronologically number the points for
         a later reconstruction. The files are saved into their respective sub dirs, Mag and Phase.''' 
         
         file_name = "%(name_prefix)s_%(type)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix
                                                         ,'file_num':str(data_point).zfill(5),
-                                                        'type':type
+                                                        'type':dtype
                                                         }
-        if type == 'mag':
+        if dtype == 'mag':
             fullpath = path.join(self.config.mag_point_dir, file_name)    
-        elif type == 'phase':
+        elif dtype == 'phase':
             fullpath = path.join(self.config.phase_point_dir, file_name) 
         else:
             raise Exception, "You did not supply an accepted type of 'mag' or 'phase'. "
         
-        np.savetxt(fullpath, data)
+        # below is a fix for the single sweep vna mode, becasue one element
+        # of an np array is an np scalar and np.savetxt won't work with it.
+        # could not find a way to cast the np scalar into ndarray.
+        if isinstance(data,np.ndarray):
+            np.savetxt(fullpath, data)
+        elif isinstance(data,np.float64):
+            f = open(fullpath,'w')
+            f.write(str(data))
+            f.close() 
           
         print "File Saved Successfully.\n"
 
@@ -240,13 +250,14 @@ Y Origin = %(y_origin)s
         return outdata
      
     def save_flattened_array(self,data):
-        '''The only way to save n dim array as text, is to flatten it out into 1D array, load into 
-        program like matlab, then reshape. '''
+        '''This method is for numpy 3D arrays. The only way to save n dim array as text, 
+        is to flatten it out into 1D array, load into program like matlab, then reshape. '''
         dim1 = str(self.config.Num_y_pts)
         dim2 = str(self.config.Num_x_pts)
         dim3 = str(self.config.Freq_num_pts)
         fname = "%s_flattened_%s_%s_%s.txt " %(self.config.FileNamePrefix,dim1,dim2,dim3)      
         fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,fname)
+
         np.savetxt(fullpath, data)    
                                   
 class PlotTools(object):
@@ -255,17 +266,30 @@ class PlotTools(object):
         plt.figure()
         plt.ion()    
         dummy = np.zeros((self.config.Num_x_pts,self.config.Num_y_pts))
-        im = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
-        plt.colorbar(im)   
+ 
+        im1 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
+        plt.colorbar(im1)   
+ 
+        im2 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
+        plt.colorbar(im2)  
+          
                
     def plot(self, mag, phase, z=0):
         '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
         xy plane you want to plot. For single point mode, z = 0 (default), for sweep you must choose. '''
+        
         plt.subplot(1,2,1)
-        im = plt.imshow(mag[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
-        plt.subplot(1,2,2)
-        im = plt.imshow(phase[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        im1 = plt.imshow(mag[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        plt.title('Magnitude Linear Scale')
+        plt.xlabel('X axis points')
+        plt.ylabel('Y axis points')
 
+        plt.subplot(1,2,2)
+        im2 = plt.imshow(phase[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        plt.title('Phase Linear Scale') 
+        plt.xlabel('X axis points')
+        plt.ylabel('Y axis points')
+        
         plt.draw()
         
     def close_plot(self):

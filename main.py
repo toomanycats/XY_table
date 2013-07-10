@@ -37,7 +37,7 @@ def take_data(data_point, index_y, index_x, config):
     phase_array[:,index_y,index_x] = phase_data
     # save the phase data from a single point to it's own file
         # in the Single_Point dir
-    arraytools.save_data_to_file(data_point, mag_data, 'phase')    
+    arraytools.save_data_to_file(data_point, phase_data, 'phase')    
     # plot the in-vivo data
     plottools.plot(mag_array, phase_array)
 
@@ -48,6 +48,7 @@ def _take_data(config):
         data = vna.take_single_point_data(config.SingleFrequency)
     else:
         raise Exception,"%s is not a valid mode. \n" %config.mode
+
     return data
 
 def set_pos_as_sample_origin():
@@ -60,7 +61,7 @@ def set_pos_as_sample_origin():
 ####### START HERE #####
 try:
     config = code_tools.ConfigureDataSet()
-    config.mode = 'sweep'
+    config.mode = 'single'
     config.ExperimentDir = 'test'
     config.FileNamePrefix = 'test'
     config.SingleFrequency = 14e9 # single freq mode
@@ -93,9 +94,12 @@ try:
     plottools = code_tools.PlotTools(config)
 
     ### test the load from files method
-    codetools = code_tools.ArrayTools(config)
-    loaded_data = codetools.load_data_files('mag')
-    array3d = codetools.reshape_1D_to_3D(loaded_data)
+#     codetools = code_tools.ArrayTools(config)
+#     mag_data = codetools.load_data_files('mag')
+#     mag_array3d = codetools.reshape_1D_to_3D(mag_data)
+#     phase_data = codetools.load_data_files('phase')
+#     phase_array3d = codetools.reshape_1D_to_3D(phase_data)
+#     plottools.plot(mag_array3d,phase_array3d)
         
     ## Motor instance 
     mx,my = motor_tools.Connection(config).connect_to_ports()

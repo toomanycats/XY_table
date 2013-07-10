@@ -61,7 +61,9 @@ class Connection(object):
                 if re_obj.match(item) is not None:
                     return item
             
-            raise Exception, "Pattern match failed in loop structure to get serial number."
+            raise Exception, """Pattern match failed in loop structure to get serial number.
+This can happen if a connection to the motor(s) was closed and re-opened. The OS kernel might not have 
+cleared the port even though the program has closed the socket. Try the program again."""
 
     def assign_serial_num(self, sn, x_port, y_port, con):
         if sn == '269120375' and y_port is False:

@@ -89,11 +89,14 @@ class VnaTools(object):
         g.write(16,"AVERON")
 
     def take_single_point_data(self, freq):
+        '''Take a single data point.'''
         self.check_for_errors()
         g.write(16,"FREQ;SINP;CENT,%f" %freq)
         self.status_byte(2)
         data_mat = self._read_data()
-        
+        # one element of a np array is an np scalar and
+        # causes problems with np.savetxt since that method wants
+        # a array with shape != ()
         return data_mat[0]
 
     def take_sweep_data(self):
