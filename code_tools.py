@@ -34,23 +34,22 @@ class ConfigureDataSet(object):
         self.Num_y_pts = 0
         self.x_port = ''
         self.y_port = ''
-        self.mag_point_dir = ''
-        self.phase_point_dir = ''
+        self.real_point_dir = ''
+        self.imag_point_dir = ''
         
     def make_sub_dirs(self):
         p = path.join(self.DirectoryRoot,self.ExperimentDir)
         if not path.exists(p):
             makedirs(p)
         
-        self.mag_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Real')
-        if not path.exists(self.mag_point_dir):
-            makedirs(self.mag_point_dir)
+        self.real_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Real')
+        if not path.exists(self.real_point_dir):
+            makedirs(self.real_point_dir)
 
-        self.phase_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Imag')
-        if not path.exists(self.phase_point_dir):
-            makedirs(self.phase_point_dir)  
+        self.imag_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Imag')
+        if not path.exists(self.imag_point_dir):
+            makedirs(self.imag_point_dir)  
         
-
     def set_xy_num_pts(self):
         self.Num_x_pts = int(np.ceil(self.X_length / self.X_res))
         self.Num_y_pts = int(np.ceil(self.Y_length / self.Y_res))
@@ -169,9 +168,9 @@ Y Origin = %(y_origin)s
                                                         'type':dtype
                                                         }
         if dtype == 'real':
-            fullpath = path.join(self.config.mag_point_dir, file_name)    
+            fullpath = path.join(self.config.real_point_dir, file_name)    
         elif dtype == 'imag':
-            fullpath = path.join(self.config.phase_point_dir, file_name) 
+            fullpath = path.join(self.config.imag_point_dir, file_name) 
         else:
             raise Exception, "You did not supply an accepted type of 'real' or 'imag'. "
         
@@ -237,9 +236,9 @@ Y Origin = %(y_origin)s
         columns of row data. Use reshape_1D_to_3D() to get back a numpy 3D array.'''
     
         if type == 'mag':
-            base_dir = self.config.mag_point_dir
+            base_dir = self.config.real_point_dir
         elif type == 'phase':
-            base_dir = self.config.phase_point_dir    
+            base_dir = self.config.imag_point_dir    
         else:
             raise Exception, "Type was not a valid choice of 'mag' or 'phase'. "    
 
