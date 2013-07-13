@@ -42,11 +42,11 @@ class ConfigureDataSet(object):
         if not path.exists(p):
             makedirs(p)
         
-        self.mag_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Mag')
+        self.mag_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Real')
         if not path.exists(self.mag_point_dir):
             makedirs(self.mag_point_dir)
 
-        self.phase_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Phase')
+        self.phase_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Imag')
         if not path.exists(self.phase_point_dir):
             makedirs(self.phase_point_dir)  
         
@@ -168,25 +168,33 @@ Y Origin = %(y_origin)s
                                                         ,'file_num':str(data_point).zfill(5),
                                                         'type':dtype
                                                         }
-        if dtype == 'mag':
+        if dtype == 'real':
             fullpath = path.join(self.config.mag_point_dir, file_name)    
-        elif dtype == 'phase':
+        elif dtype == 'imag':
             fullpath = path.join(self.config.phase_point_dir, file_name) 
         else:
-            raise Exception, "You did not supply an accepted type of 'mag' or 'phase'. "
+            raise Exception, "You did not supply an accepted type of 'real' or 'imag'. "
         
-        # below is a fix for the single sweep vna mode, becasue one element
+        # below is a fix for the single sweep vna mode, because one element
         # of an np array is an np scalar and np.savetxt won't work with it.
         # could not find a way to cast the np scalar into ndarray.
         if isinstance(data,np.ndarray):
-            np.savetxt(fullpath, data)
-        elif isinstance(data,np.float64):
-            f = open(fullpath,'w')
-            f.write(str(data))
-            f.close() 
+            if data.shape == ():#used when data = np.real(data[0])
+                self._write_single_data_point(fullpath, data)
+            else:#used when data = np.array()
+                 np.savetxt(fullpath, data)   
+        elif isinstance(data,np.float64):#used when data  = np.abs(data[0])
+            self._write_single_data_point(fullpath, data)
           
         print "File Saved Successfully.\n"
 
+    def _write_single_data_point(self,fullpath, data):
+        '''Used to save data that is a single point, like a real or imag number. This is for data
+         that is not an np array. '''
+        f = open(fullpath,'w')
+        f.write(str(data))
+        f.close() 
+                
     def make_3d_array(self):
         '''Initialize a numpy 3D or 2D array for storing Mag or Phase data. This is for using PYthon to
         view the data during the experiment. The lab protocol for storing the data for outside analysis is to
@@ -195,6 +203,16 @@ Y Origin = %(y_origin)s
         array = np.zeros((self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))
         
         return array
+ 
+    def get_real(self, data):
+        real_data = np.real(data)
+      
+        return real_data
+    
+    def get_imag(self,data):
+        imag_data = np.imag(data)
+        
+        return imag_data
     
     def get_magnitude(self, data):
         '''Takes col of complex numbers and returns col of mag. '''

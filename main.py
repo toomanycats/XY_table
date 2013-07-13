@@ -25,21 +25,21 @@ def take_data(data_point, index_y, index_x, config):
     # get the raw data as complex pairs
     data = _take_data(config)
     # get the mag from the raw data
-    mag_data = arraytools.get_magnitude(data)
+    real_data = arraytools.get_real(data)
     # send to mag_array for in-vivo plotting
-    mag_array[:,index_y, index_x] = mag_data
+    real_array[:,index_y, index_x] = real_data
     # save the mag data from a single point to it's own file
         # in the Single_Point dir
-    arraytools.save_data_to_file(data_point, mag_data, 'mag')
+    arraytools.save_data_to_file(data_point, real_data, 'real')
     # get the phase from the raw data 
-    phase_data = arraytools.get_phase(data)
+    imag_data = arraytools.get_imag(data)
     # send the phase data to the in-vivo phase_array
-    phase_array[:,index_y,index_x] = phase_data
+    imag_array[:,index_y,index_x] = imag_data
     # save the phase data from a single point to it's own file
         # in the Single_Point dir
-    arraytools.save_data_to_file(data_point, phase_data, 'phase')    
+    arraytools.save_data_to_file(data_point, imag_data, 'imag')    
     # plot the in-vivo data
-    plottools.plot(mag_array, phase_array)
+    plottools.plot(real_array, imag_array)
 
 def _take_data(config):
     if config.mode == 'sweep':
@@ -61,7 +61,7 @@ def set_pos_as_sample_origin():
 ####### START HERE #####
 try:
     config = code_tools.ConfigureDataSet()
-    config.mode = 'single'
+    config.mode = 'sweep'
     config.ExperimentDir = 'test'
     config.FileNamePrefix = 'test'
     config.SingleFrequency = 14e9 # single freq mode
@@ -72,7 +72,7 @@ try:
         print "The VNA must already be in Single sweep mode on.\n"
         config.Freq_num_pts = 1
     else:
-        config.Freq_num_pts = 201
+        config.Freq_num_pts = 51
     config.TestSet = 'S21' #transmition always for this experiment
     config.X_length = 0.05
     config.Y_length = 0.05
@@ -89,8 +89,8 @@ try:
     arraytools.save_readme()
     
     # make an array to hold the data
-    mag_array =   arraytools.make_3d_array()
-    phase_array = arraytools.make_3d_array()
+    real_array =   arraytools.make_3d_array()
+    imag_array = arraytools.make_3d_array()
     # plotting 
     plottools = code_tools.PlotTools(config)
 
