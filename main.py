@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#TODO: move all the methods here to code_tools
+
 import motor_tools
 import vna_tools
 import code_tools
@@ -59,6 +59,7 @@ def set_pos_as_sample_origin():
         config.Y_origin = my._calculate_pos(my._CurrentStep)
 
 ####### START HERE #####
+
 try:
     config = code_tools.ConfigureDataSet()
     config.mode = 'sweep'
