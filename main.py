@@ -51,22 +51,24 @@ def _take_data(config):
 
     return data
 
+def set_sample_origin(mx,my, config):
+    flag = raw_input("Do you know the sample origin or do you wish to start at the center ? y/n")
+    if flag == 'y':
+        config.X_origin = int(raw_input("Enter the X origin of the sample: "))
+        config.Y_origin = int(raw_input("Enter the Y origin of the sample: "))
+        mx.move_absolute(config.X_origin)
+        my.move_absolute(config.Y_origin)
+    elif flag == 'n':
+        print "Moving sample to roughly center, this will be the sample origin.\n"    
+        mx.move_absolute(25)
+        my.move_absolute(25)
+        config.X_origin = mx._calculate_pos(mx._CurrentStep)
+        config.Y_origin = my._calculate_pos(my._CurrentStep)
+    else:
+        raise Exception, "Not a 'y' or a 'n'."
+
 def get_config_from_user(): 
         '''Have the user fill out config values interactively. ''' 
-        flag = raw_input("Do you know the sample origin or do you wish to start at the center ? y/n")
-        if flag == 'y':
-            config.X_origin = int(raw_input("Enter the X origin of the sample: "))
-            config.Y_origin = int(raw_input("Enter the Y origin of the sample: "))
-            mx.move_absolute(config.X_origin)
-            my.move_absolute(config.Y_origin)
-        elif flag == 'n':
-            print "Moving sample to roughly center, this will be the sample origin.\n"    
-            mx.move_absolute(25)
-            my.move_absolute(25)
-            config.X_origin = mx._calculate_pos(mx._CurrentStep)
-            config.Y_origin = my._calculate_pos(my._CurrentStep)
-        else:
-            raise Exception, "Not a 'y' or a 'n'."
         
         config = code_tools.ConfigureDataSet()
         config.mode = raw_input("Enter the mode 'sweep' or 'single':")
@@ -106,8 +108,9 @@ def main():
     #     imag_array3d = codetools.reshape_1D_to_3D(imag_data)
     #     plottools.plot(real_array3d,imag_array3d)    
     try:
-        ## analyzer instance
-        vna = vna_tools.VnaTools(config)
+        # get the config setup interactively
+        config = get_config_from_user()
+        
         ## Motor instances 
         mx,my = motor_tools.Connection(config).connect_to_ports()
         mx.main()
@@ -115,8 +118,10 @@ def main():
         # return motors to home limit switches
         mx.return_home()
         my.return_home()
-        # get the config setup interactively
-        config = get_config_from_user()
+        set_sample_origin(mx,my,config)
+
+        ## analyzer instance
+        vna = vna_tools.VnaTools(config)
         
         # save the readme file to the directory
         arraytools = code_tools.ArrayTools(config)
