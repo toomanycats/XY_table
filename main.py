@@ -98,7 +98,7 @@ def get_config_from_user():
     
         return config
 
-def main():
+def experiment_main():
     '''Run the experiment. '''
 ### test the load from files method
     #     codetools = code_tools.ArrayTools(config)
@@ -149,7 +149,8 @@ def main():
         print """A value error was thrown. It is likely that the Freq_num_pts was 
     changed and does not match the values used in to create the variables "mag_array" and "phase_array" which 
     holds the data for the in-vivo plots."""
-    
+        tb = traceback.format_exc()
+        print tb
     except:
         print "Exception raised, closing gpib and serial connections, emailing admin."
         tb = traceback.format_exc()
@@ -165,4 +166,4 @@ def main():
             #code_tools.CodeTools()._notify_admin_error(config.Username, config.Date, tb)
 
 if __name__ == "__main__":
-    main()  
+    experiment_main()  
