@@ -116,7 +116,7 @@ def main():
         mx.main()
         my.main()
         # return motors to home limit switches
-        mx.return_home()
+        #mx.return_home()
         my.return_home()
         set_sample_origin(mx,my,config)
 
