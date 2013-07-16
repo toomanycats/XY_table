@@ -51,100 +51,119 @@ def _take_data(config):
 
     return data
 
-def set_pos_as_sample_origin():
-        '''Arg is the axis name, 'x' or 'y'. Set this position as the origin of the sample.
-        Recall: steps are always aggregate, and the zeros position is always defined wrt to the 
-        'HOME' position set by the limit switches. '''
+def set_sample_origin(mx,my, config):
+    flag = raw_input("Do you know the sample origin or do you wish to start at the center ? y/n")
+    if flag == 'y':
+        config.X_origin = int(raw_input("Enter the X origin of the sample: "))
+        config.Y_origin = int(raw_input("Enter the Y origin of the sample: "))
+        mx.move_absolute(config.X_origin)
+        my.move_absolute(config.Y_origin)
+    elif flag == 'n':
+        print "Moving sample to roughly center, this will be the sample origin.\n"    
+        mx.move_absolute(25)
+        my.move_absolute(25)
         config.X_origin = mx._calculate_pos(mx._CurrentStep)
         config.Y_origin = my._calculate_pos(my._CurrentStep)
-
-####### START HERE #####
-
-try:
-    config = code_tools.ConfigureDataSet()
-    config.mode = 'sweep'
-    config.ExperimentDir = 'test'
-    config.FileNamePrefix = 'test'
-    config.SingleFrequency = 14e9 # single freq mode
-    config.FreqStart = 7e9
-    config.FreqStop = 15e9
-    # dumb temp fix
-    if config.mode == 'single':
-        print "The VNA must already be in Single sweep mode on.\n"
-        config.Freq_num_pts = 1
     else:
-        config.Freq_num_pts = 51
-    config.TestSet = 'S21' #transmition always for this experiment
-    config.X_length = 0.05
-    config.Y_length = 0.05
-    config.X_res = 0.01
-    config.Y_res = 0.01
-    config.X_origin = 0.0
-    config.Y_origin = 0.0
-    config.x_port = '/dev/ttyUSB0'
-    config.y_port = '/dev/ttyUSB1'
-    config.set_xy_num_pts()
-    config.make_sub_dirs()
-    # save the readme file to the directory
-    arraytools = code_tools.ArrayTools(config)
-    arraytools.save_readme()
-    
-    # make an array to hold the data
-    real_array =   arraytools.make_3d_array()
-    imag_array = arraytools.make_3d_array()
-    # plotting 
-    plottools = code_tools.PlotTools(config)
+        raise Exception, "Not a 'y' or a 'n'."
 
-    ### test the load from files method
-#     codetools = code_tools.ArrayTools(config)
-#     mag_data = codetools.load_data_files('mag')
-#     mag_array3d = codetools.reshape_1D_to_3D(mag_data)
-#     phase_data = codetools.load_data_files('phase')
-#     phase_array3d = codetools.reshape_1D_to_3D(phase_data)
-#     plottools.plot(mag_array3d,phase_array3d)
+def get_config_from_user(): 
+        '''Have the user fill out config values interactively. ''' 
         
-    ## Motor instance 
-    mx,my = motor_tools.Connection(config).connect_to_ports()
-    mx.main()
-    my.main()
-    ## analyzer instance
-    vna = vna_tools.VnaTools(config)
-    
-    ### testing origin handling ###
-    set_pos_as_sample_origin()
-    
-    # get to work on sample
-    loop_along_sample(config)
-    
-    # save as matlab 3D matrix in binary      
-    #arraytools.save_data_to_file(config.FileNamePrefix +'_DataArray.mat', array3d) 
+        config = code_tools.ConfigureDataSet()
+        config.mode = raw_input("Enter the mode 'sweep' or 'single':")
+        config.ExperimentDir = raw_input("Enter the name of the directotry to hold this experiment: ")
+        config.FileNamePrefix = raw_input("ENter the prefix for the files that will be saved: ")
+        
+        if config.mode == 'sweep':
+            config.FreqStart = float(raw_input("Enter the start freq of the sweep i.e., 3e9 or 10e9: "))
+            config.FreqStop = float(raw_input("Enter the stop freq: "))
+        elif config.mode == 'single':
+             config.SingleFrequency = float(raw_input("Enter the single freq, i.e., 12e9: ")) # single freq mode
 
-    print "returning to origin \n"
-    mx.return_to_sample_origin(config.X_origin)
-    my.return_to_sample_origin(config.Y_origin)
+        if config.mode == 'single':
+            config.Freq_num_pts = 1
+        else:
+            config.Freq_num_pts = int(raw_input("Enter the number of points that the analyzer is set to take: "))
     
-    # close all devices and free ports.
-    mx.close()
-    my.close()
-    vna.close()
+        config.X_length = float(raw_input("Enter the length along X in meters: "))
+        config.Y_length = float(raw_input("Enter the length along Y in meters: "))
+        config.X_res = float(raw_input("Enter the distance between X data points in meters: "))
+        config.Y_res = float(raw_input("Enter the distance between Y data points in meters: "))
+    
+        ### static config entries
+        config.TestSet = 'S21' # transmission always for this experiment
+        config.set_xy_num_pts()
+        config.make_sub_dirs()
+    
+        return config
 
-except ValueError:
-    print """A value error was thrown. It is likely that the Freq_num_pts was 
-changed and does not match the values used in to create the variables "mag_array" and "phase_array" which 
-holds the data for the in-vivo plots."""
-
-except:
-    print "Exception raised, closing gpib and serial connections, emailing admin."
-    tb = traceback.format_exc()
-    print tb
+def experiment_main():
+    '''Run the experiment. '''
+### test the load from files method
+    #     codetools = code_tools.ArrayTools(config)
+    #     real_data = codetools.load_data_files('real')
+    #     real_array3d = codetools.reshape_1D_to_3D(real_data)
+    #     imag_data = codetools.load_data_files('imag')
+    #     imag_array3d = codetools.reshape_1D_to_3D(imag_data)
+    #     plottools.plot(real_array3d,imag_array3d)    
     try:
+        # get the config setup interactively
+        config = get_config_from_user()
+        
+        ## Motor instances 
+        mx,my = motor_tools.Connection(config).connect_to_ports()
+        mx.main()
+        my.main()
+        # return motors to home limit switches
+        #mx.return_home()
+        my.return_home()
+        set_sample_origin(mx,my,config)
+
+        ## analyzer instance
+        vna = vna_tools.VnaTools(config)
+        
+        # save the readme file to the directory
+        arraytools = code_tools.ArrayTools(config)
+        arraytools.save_readme()
+        
+        # make an array to hold the data for plotting or in vivo testing
+        real_array =   arraytools.make_3d_array()
+        imag_array = arraytools.make_3d_array()
+        # plotting 
+        plottools = code_tools.PlotTools(config)
+        
+        # Where the work is done on the sample
+        loop_along_sample(config)
+        # done collecting data from a sample.
+        print "returning to origin \n"
+        mx.move_absolute(config.X_origin)
+        my.move_absolute(config.Y_origin)
+        
+        # close all devices and free ports.
         mx.close()
         my.close()
         vna.close()
-    except:
-        pass
-    finally:  
-        pass  
-        #code_tools.CodeTools()._notify_admin_error(config.Username, config.Date, tb)
-
     
+    except ValueError:
+        print """A value error was thrown. It is likely that the Freq_num_pts was 
+    changed and does not match the values used in to create the variables "mag_array" and "phase_array" which 
+    holds the data for the in-vivo plots."""
+        tb = traceback.format_exc()
+        print tb
+    except:
+        print "Exception raised, closing gpib and serial connections, emailing admin."
+        tb = traceback.format_exc()
+        print tb
+        try:
+            mx.close()
+            my.close()
+            vna.close()
+        except:
+            pass
+        finally:  
+            pass  
+            #code_tools.CodeTools()._notify_admin_error(config.Username, config.Date, tb)
+
+if __name__ == "__main__":
+    experiment_main()  

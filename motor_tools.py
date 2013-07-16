@@ -350,9 +350,9 @@ class Motor(Connection):
         self._CurrentStep = self._get_current_step()
         self.CurrentPos = self._calculate_pos(self._CurrentStep)
 
-    def return_to_sample_origin(self, origin):
-        '''Return the sample to the origin set in the config object. '''
-        steps = self._calc_steps(origin)
+    def move_absolute(self, pos):
+        '''Move the motor to an absolute position wrt to the limit switch HOME. '''
+        steps = self._calc_steps(pos)
         self.con.write('MA %i\r\n' %steps)
     
     
