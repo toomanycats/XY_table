@@ -212,6 +212,7 @@ class Motor(Connection):
         self.write('SL 0') # stop the slew movement
         sleep(0.7)
         self.clear_error()
+        self.set_pos_as_start()
 
     def move_rel(self, linear_dist):
         '''Tell the motor to move a linear distance as a relative position.'''
