@@ -54,6 +54,34 @@ class ConfigureDataSet(object):
         self.Num_x_pts = int(np.ceil(self.X_length / self.X_res))
         self.Num_y_pts = int(np.ceil(self.Y_length / self.Y_res))
 
+    def get_config_from_user(self): 
+        '''Have the user fill out config values interactively. ''' 
+        
+        self.mode = raw_input("Enter the mode 'sweep' or 'single':")
+        self.ExperimentDir = raw_input("Enter the name of the directotry to hold this experiment: ")
+        self.FileNamePrefix = raw_input("ENter the prefix for the files that will be saved: ")
+        
+        if self.mode == 'sweep':
+            self.FreqStart = float(raw_input("Enter the start freq of the sweep i.e., 3e9 or 10e9: "))
+            self.FreqStop = float(raw_input("Enter the stop freq: "))
+        elif self.mode == 'single':
+             self.SingleFrequency = float(raw_input("Enter the single freq, i.e., 12e9: ")) # single freq mode
+
+        if self.mode == 'single':
+            self.Freq_num_pts = 1
+        else:
+            self.Freq_num_pts = int(raw_input("Enter the number of points that the analyzer is set to take: "))
+    
+        self.X_length = float(raw_input("Enter the length along X in meters: "))
+        self.Y_length = float(raw_input("Enter the length along Y in meters: "))
+        self.X_res = float(raw_input("Enter the distance between X data points in meters: "))
+        self.Y_res = float(raw_input("Enter the distance between Y data points in meters: "))
+    
+        ### static config entries
+        self.TestSet = 'S21' # transmission always for this experiment
+        self.set_xy_num_pts()
+        self.make_sub_dirs()
+
 class CodeTools(object):
     '''Contains methods used for the combination of motor tools and vna tools '''    
     

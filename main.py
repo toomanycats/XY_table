@@ -71,37 +71,6 @@ def set_sample_origin(mx,my, config):
     else:
         raise Exception, "Not a 'y' or a 'n'."
 
-def get_config_from_user(): 
-        '''Have the user fill out config values interactively. ''' 
-        
-        config = code_tools.ConfigureDataSet()
-        config.mode = raw_input("Enter the mode 'sweep' or 'single':")
-        config.ExperimentDir = raw_input("Enter the name of the directotry to hold this experiment: ")
-        config.FileNamePrefix = raw_input("ENter the prefix for the files that will be saved: ")
-        
-        if config.mode == 'sweep':
-            config.FreqStart = float(raw_input("Enter the start freq of the sweep i.e., 3e9 or 10e9: "))
-            config.FreqStop = float(raw_input("Enter the stop freq: "))
-        elif config.mode == 'single':
-             config.SingleFrequency = float(raw_input("Enter the single freq, i.e., 12e9: ")) # single freq mode
-
-        if config.mode == 'single':
-            config.Freq_num_pts = 1
-        else:
-            config.Freq_num_pts = int(raw_input("Enter the number of points that the analyzer is set to take: "))
-    
-        config.X_length = float(raw_input("Enter the length along X in meters: "))
-        config.Y_length = float(raw_input("Enter the length along Y in meters: "))
-        config.X_res = float(raw_input("Enter the distance between X data points in meters: "))
-        config.Y_res = float(raw_input("Enter the distance between Y data points in meters: "))
-    
-        ### static config entries
-        config.TestSet = 'S21' # transmission always for this experiment
-        config.set_xy_num_pts()
-        config.make_sub_dirs()
-    
-        return config
-
 def experiment_main():
     '''Run the experiment. '''
 ### test the load from files method
@@ -113,7 +82,8 @@ def experiment_main():
     #     plottools.plot(real_array3d,imag_array3d)    
     try:
         # get the config setup interactively
-        config = get_config_from_user()
+        config = code_tools.ConfigureDataSet()
+        config.get_config_from_user()
         
         ## Motor instances 
         mx,my = motor_tools.Connection().connect_to_ports()
