@@ -9,6 +9,8 @@ import traceback
 import matplotlib.pyplot as plt
 
 def loop_along_sample(config):
+    '''The real meat of the experiment is controlled here. The sample is
+    looped across and take is taken and saved. '''
     data_point = 0 # used to name the individual data point files. 
     index_x = 0
     for index_y in xrange(0,config.Num_y_pts):
@@ -21,6 +23,7 @@ def loop_along_sample(config):
         my.move_rel(config.Y_res)   
 
 def take_data(data_point, index_y, index_x, config):
+    '''Calls to the analyzer are made and the data is recorded. '''
     print "Taking transmission data. \n"
     # get the raw data as complex pairs
     data = _take_data(config)
@@ -52,7 +55,8 @@ def _take_data(config):
     return data
 
 def set_sample_origin(mx,my, config):
-    flag = raw_input("Do you know the sample origin or do you wish to start at the center ? y/n")
+    '''The user can set the origin or center of the table will be used. '''
+    flag = raw_input("If you know the origin cordinates you'd like to use, enter 'y', or 'n':  y/n")
     if flag == 'y':
         config.X_origin = int(raw_input("Enter the X origin of the sample: "))
         config.Y_origin = int(raw_input("Enter the Y origin of the sample: "))
