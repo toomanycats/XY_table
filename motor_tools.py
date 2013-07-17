@@ -6,10 +6,9 @@ from code_tools import CodeTools
 import code_tools
 
 class Connection(object):
-    def __init__(self, config):
+    def __init__(self):
         self.con1 = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.con2 = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
-        self.config = config
         
     def _get_sn(self, con):
         '''Query the motor for it's serial number. '''
@@ -68,20 +67,19 @@ cleared the port even though the program has closed the socket. Try the program 
     def assign_serial_num(self, sn, x_port, y_port, con):
         if sn == '269120375' and y_port is False:
             y_port = True
-            self.motor_y = Motor(con, self.config)
+            self.motor_y = Motor(con)
         elif sn == '074130197' and x_port is False:
             x_port = True
-            self.motor_x = Motor(con, self.config)
+            self.motor_x = Motor(con)
           
         return x_port, y_port    
 
 class Motor(Connection):
     '''This is a collection of methods which control an Mdrive 23 step motor. '''
     
-    def __init__(self, serial_con, config):
+    def __init__(self, serial_con):
         #self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.con = serial_con
-        self.config = config
         self.codetools = CodeTools()
         self._LIMIT_METERS = 0.1 # maximum travel in meters
         self.CurrentPos = 0.0

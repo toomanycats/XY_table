@@ -112,11 +112,11 @@ def experiment_main():
         config = get_config_from_user()
         
         ## Motor instances 
-        mx,my = motor_tools.Connection(config).connect_to_ports()
+        mx,my = motor_tools.Connection().connect_to_ports()
         mx.main()
         my.main()
         # return motors to home limit switches
-        #mx.return_home()
+        mx.return_home()
         my.return_home()
         set_sample_origin(mx,my,config)
 
