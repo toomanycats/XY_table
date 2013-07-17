@@ -66,7 +66,9 @@ class ConfigureDataSet(object):
             self.FreqStop = float(raw_input("Enter the stop freq: "))
         elif self.mode == 'single':
              self.SingleFrequency = float(raw_input("Enter the single freq, i.e., 12e9: ")) # single freq mode
-
+        else:
+            raise Exception, "Not a valid choice, 'sweep' or 'single' only."
+            
         if self.mode == 'single':
             self.Freq_num_pts = 1
         else:
@@ -76,7 +78,9 @@ class ConfigureDataSet(object):
         self.Y_length = float(raw_input("Enter the length along Y in meters: "))
         self.X_res = float(raw_input("Enter the distance between X data points in meters: "))
         self.Y_res = float(raw_input("Enter the distance between Y data points in meters: "))
-    
+        if self.X_res >= self.X_length or self.Y_res >= self.Y_length:
+            raise Exception, "X,Y resolution cannot be greater or equal to the X length."
+
         ### static config entries
         self.TestSet = 'S21' # transmission always for this experiment
         self.set_xy_num_pts()

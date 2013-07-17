@@ -71,6 +71,20 @@ def set_sample_origin(mx,my, config):
     else:
         raise Exception, "Not a 'y' or a 'n'."
 
+def review_config_settings(config):
+    '''Print the values stored in the config object and prompt for changes. '''
+    print "Review the config you just made. \n"
+    for k,v in config.__dict__.iteritems():
+        print "%s ........ %s" %(str(k).rjust(15),str(v).rjust(15))
+    cont = raw_input("Are these settings correct ? (y/n)")
+    if cont == 'y':
+        return
+    elif cont == 'n':
+        config.get_config_from_user()
+    else:
+        print "Enter 'y' or 'n'."
+        review_config_settings(config)
+
 def experiment_main():
     '''Run the experiment. '''
 ### test the load from files method
@@ -84,6 +98,9 @@ def experiment_main():
         # get the config setup interactively
         config = code_tools.ConfigureDataSet()
         config.get_config_from_user()
+        
+        # user review the config settings
+        review_config_settings(config)
         
         ## Motor instances 
         mx,my = motor_tools.Connection().connect_to_ports()
