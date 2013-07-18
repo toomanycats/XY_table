@@ -112,7 +112,7 @@ def experiment_main():
         set_sample_origin(mx,my,config)
 
         ## analyzer instance
-        vna = vna_tools.VnaTools(config.FreqStart, config.FreqStop)
+        vna = vna_tools.VnaTools(analyzer_name = "VNA")# should open a connection on channel 16.
         
         # save the readme file to the directory
         arraytools = code_tools.ArrayTools(config)

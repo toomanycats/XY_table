@@ -7,34 +7,21 @@ import numpy as np
 class VnaTools(object):
     '''Library of methods to control an HP8510C Vector Network Analyzer. This module uses
     the ascii format for data transmission.'''
-    def __init__(self, freqstart, freqstop):
-        self.freqstart = freqstart
-        self.freqstop =  freqstop
-        self._open_con()
-        self.channel_check = 16
-        '''The SFSU analyzer must be set to channel 16, which is set in the gpib PCI card config. Change this to 
-        what ever channel you require your analyzer to be set to.'''
+    def __init__(self,analyzer_name): 
+        self._open_con(analyzer_name)
+        '''The SFSU analyzer must be set to channel 16, which is set in the gpib PCI card config.'''
 
-    def _open_con(self):
-        '''Open a connection to the VNA via gpib and confirm that the channel is self.chan. Subsequent calls
-        will open GPIB on channels 17, 18 etc. That is not OK since the GPIB bus on the HP8510C
-        uses those channels for talking to the test set and other components. '''
+    def _open_con(self, analyzer_name):
+        '''Open a connection to the VNA via gpib and confirm that the channel is correct. Subsequent calls
+        will open GPIB on channels that increment by one. That is not OK since the GPIB bus on the HP8510C
+        uses specific channels for talking to the test set and other components. The 'analyzer_name' argument, 
+        is how the kernel knows which gpib interface you are refering to. That is setup with the linux_gpib config
+        tool. For SFSU, that name is "VNA". '''
         
-        print "Opening connection to VNA \n Address of VNA (Should be self.chan!):"
-        self.chan = g.find("VNA")
+        print "Opening connection to analyzer \n"
+        self.chan = g.find(analyzer_name)
         print "VNA channel is %s \n" %str(chan)
-        if self.chan is not self.channel_check:
-            print """The analyzer was not connected on channel %s. It is likely that the another connection
-was already open, and the new call incremented the channel. The channel %s is set in the kernel config
-for the gpib pci card  and is consistant with the setting on the HP8510C and associated components via bus dip switches. 
-I will now try closing channels %s + 1 and + 2. When you retry this program, the channel should be back to %s when you re-run
-this program.""" %(str(self.chan),str(self.chan),str(self.chan))
-            try:    
-                g.close(self.chan)
-                g.close(self.chan+1)
-                g.close(self.chan+2)
-            finally:
-                raise Exception, "Quiting program."
+    
         self.check_for_errors()# head off synxtax errors and corrupted buffer
         g.write(self.chan,"FORM4")#set up ascii format    
         time.sleep(0.5)      
