@@ -5,19 +5,38 @@ import sys
 import numpy as np
 
 class VnaTools(object):
-    '''Library of methods to control an HP8510C Vector Network Analyzer. '''
+    '''Library of methods to control an HP8510C Vector Network Analyzer. This module uses
+    the ascii format for data transmission.'''
     def __init__(self, freqstart, freqstop):
         self.freqstart = freqstart
         self.freqstop =  freqstop
         self._open_con()
+        self.channel_check = 16
+        '''The SFSU analyzer must be set to channel 16, which is set in the gpib PCI card config. Change this to 
+        what ever channel you require your analyzer to be set to.'''
 
     def _open_con(self):
-        '''Open a connectino to the VNA via gpib and confirm that the channel is 16. '''
-        print "Opening connection to VNA \n Address of VNA (Should be 16!):"
-        chan = g.find("VNA")
-        print str(chan) + "\n"
+        '''Open a connection to the VNA via gpib and confirm that the channel is self.chan. Subsequent calls
+        will open GPIB on channels 17, 18 etc. That is not OK since the GPIB bus on the HP8510C
+        uses those channels for talking to the test set and other components. '''
+        
+        print "Opening connection to VNA \n Address of VNA (Should be self.chan!):"
+        self.chan = g.find("VNA")
+        print "VNA channel is %s \n" %str(chan)
+        if self.chan is not self.channel_check:
+            print """The analyzer was not connected on channel %s. It is likely that the another connection
+was already open, and the new call incremented the channel. The channel %s is set in the kernel config
+for the gpib pci card  and is consistant with the setting on the HP8510C and associated components via bus dip switches. 
+I will now try closing channels %s + 1 and + 2. When you retry this program, the channel should be back to %s when you re-run
+this program.""" %(str(self.chan),str(self.chan),str(self.chan))
+            try:    
+                g.close(self.chan)
+                g.close(self.chan+1)
+                g.close(self.chan+2)
+            finally:
+                raise Exception, "Quiting program."
         self.check_for_errors()# head off synxtax errors and corrupted buffer
-        g.write(16,"FORM4")#set up ascii format    
+        g.write(self.chan,"FORM4")#set up ascii format    
         time.sleep(0.5)      
         self.check_remote_or_local()
         self.check_average_on()
@@ -25,22 +44,22 @@ class VnaTools(object):
         self.check_parameters()
         
     def check_remote_or_local(self):    
-        g.write(16,"SYSB?")
+        g.write(self.chan,"SYSB?")
         time.sleep(0.5)
-        string = g.read(16,50).strip("\n")
+        string = g.read(self.chan,50).strip("\n")
         print "\n *** VNA is in %s mode. *** \n" %string
 
     def clear(self, TIME = 0.5):
         '''Clear the VNA buffers. '''
-        g.clear(16)
+        g.clear(self.chan)
         time.sleep(TIME)
         
     def check_parameters(self):
         '''Check and print the test, S21, S11, S12, S22. '''
         #Checks the parameter setting.
-        g.write(16, "PARA?")
+        g.write(self.chan, "PARA?")
         time.sleep(0.5)
-        param = g.read(16, 100)
+        param = g.read(self.chan, 100)
         self.param = param.replace('\n','').replace('"','')
         if self.param == 'S12':
             self.ystr = "Transmission"
@@ -57,15 +76,15 @@ class VnaTools(object):
 
     def turn_calibration_on(self):
         '''Enable calibration. Usually done manually before running this prog.'''
-        g.write(16,"CORRON")
+        g.write(self.chan,"CORRON")
         self.clear()
-        g.write(16,"CALS1")
+        g.write(self.chan,"CALS1")
         self.clear()
 
     def check_average_on(self):
         #self.clear()
-        g.write(16,"AVER?")
-        self.aver_state = g.read(16,100)[0]
+        g.write(self.chan,"AVER?")
+        self.aver_state = g.read(self.chan,100)[0]
         if self.aver_state == '1':
             print "averaging is on. \n"
         elif self.aver_state == '0':
@@ -74,9 +93,9 @@ class VnaTools(object):
     def check_cal(self):
         '''Checks the CAL setting.'''
         #self.clear()
-        g.write(16,"CALS?")
+        g.write(self.chan,"CALS?")
         time.sleep(0.5)
-        self.cals = g.read(16, 100)[0] 
+        self.cals = g.read(self.chan, 100)[0] 
         if self.cals=='0':
              print "Calibration is OFF"
              self.calsstring = "no calibration is being used."
@@ -85,12 +104,12 @@ class VnaTools(object):
              self.calsstring = "CAL" + self.cals
 
     def average_on(self):
-        g.write(16,"AVERON")
+        g.write(self.chan,"AVERON")
 
     def take_single_point_data(self, freq):
         '''Take a single data point.'''
         self.check_for_errors()
-        g.write(16,"FREQ;SINP;CENT,%f" %freq)
+        g.write(self.chan,"FREQ;SINP;CENT,%f" %freq)
         self.status_byte(2)
         data_mat = self._read_data()
         
@@ -108,10 +127,10 @@ it is not clear that this is truly the case. I know it's annoying... """
     def take_sweep_data(self):
         '''Take a single sweep, wait for the sweep to finish, then record the data. '''
         self.check_for_errors()
-        g.write(16,"SING")
+        g.write(self.chan,"SING")
         print "Waiting for data.\n"
         
-        self.status_byte(16)
+        self.status_byte(self.chan)
         self._print_and_clear_error()
         
         data_mat = self._read_data()
@@ -120,10 +139,10 @@ it is not clear that this is truly the case. I know it's annoying... """
  
     def _read_data(self, len_data = 1000000):
         #Recieve data as a long ascii string.
-        g.write(16,"OUTPDATA")
+        g.write(self.chan,"OUTPDATA")
         print "Getting data from analyzer \n"
         time.sleep(0.5)
-        raw_data = g.read(16,len_data)#read many bytes
+        raw_data = g.read(self.chan,len_data)#read many bytes
         #Parse string to create numerical data matrix.
         data = raw_data.replace("\n",",")
         data = np.fromstring(data,sep=",")
@@ -145,15 +164,15 @@ it is not clear that this is truly the case. I know it's annoying... """
         singdone = False
         while singdone == False:
             time.sleep(0.25)
-            hex = g.rsp(16)
+            hex = g.rsp(self.chan)
             time.sleep(0.25)
             hex = "%r" %hex # cast into raw string
             hex = hex.replace('\\','0').strip("'") 
-            stat = int(hex,16)
+            stat = int(hex,self.chan)
             #print 'status byte: ' + str(stat) + '\n'
             if stat >= code:
                 singdone = True
-                g.write(16,"CLES")# clear the status byte for next read
+                g.write(self.chan,"CLES")# clear the status byte for next read
                 time.sleep(0.25)
         print "Sweep completed. \n"   
 
@@ -162,7 +181,7 @@ it is not clear that this is truly the case. I know it's annoying... """
         manualchanges = raw_input("Do you want a break to change some settings manually? (y/n): ")
         if manualchanges == 'y':
             print "Wait a moment..."
-            g.close(16)
+            g.close(self.chan)
             time.sleep(2)
             pausescript = raw_input("Okay. Press the LOCAL button and change any settings you want. Hit enter here when you're done.")
             #Reconnect and check the settings. ASSUMES FREQ RANGE IS UNCHANGED.
@@ -171,20 +190,20 @@ it is not clear that this is truly the case. I know it's annoying... """
     def close(self):
         '''Close the gpib connectin to the VNA. '''
         self.clear()
-        g.close(16)
+        g.close(self.chan)
         print "Vna connection closed \n"
 
     def _print_and_clear_error(self):
         '''Prints the error from the VNA and clears them. '''
         print "Clearing error from VNA. \n"
-        g.write(16,"OUTPERRO")
-        error_msg = g.read(16,1000)
+        g.write(self.chan,"OUTPERRO")
+        error_msg = g.read(self.chan,1000)
         print error_msg + '\n'
             
     def check_for_errors(self):
         '''Check the status byte and if there's an error, print and clear it. '''
-        g.write(16,"OUTPSTAT")
-        stat_bytes = g.read(16,100)
+        g.write(self.chan,"OUTPSTAT")
+        stat_bytes = g.read(self.chan,100)
         if stat_bytes[2] == '1':
             print "Error found in status byte, clearing now. \n"
             self._print_and_clear_error()        
