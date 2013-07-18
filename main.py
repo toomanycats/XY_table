@@ -112,7 +112,7 @@ def experiment_main():
         set_sample_origin(mx,my,config)
 
         ## analyzer instance
-        vna = vna_tools.VnaTools(config)
+        vna = vna_tools.VnaTools(config.FreqStart, config.FreqStop)
         
         # save the readme file to the directory
         arraytools = code_tools.ArrayTools(config)

@@ -6,10 +6,9 @@ import numpy as np
 
 class VnaTools(object):
     '''Library of methods to control an HP8510C Vector Network Analyzer. '''
-    def __init__(self, Config):
-        self.config = Config 
-        self.freqstart = self.config.FreqStart
-        self.freqstop =  self.config.FreqStop
+    def __init__(self, freqstart, freqstop):
+        self.freqstart = freqstart
+        self.freqstop =  freqstop
         self._open_con()
 
     def _open_con(self):
