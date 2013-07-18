@@ -10,6 +10,10 @@ I use a National Instruments GPIB PCI interface card.
 There's a thread on ubuntuforums.org that I started when getting this setup for the first time and
 the install instructions for the linux-gpib module are there. 
 
+I have more doc in the form of lab notes which I haven't yet reproduced here. This project is still in development.
+However, I will update this read me with more details. If you need assistance sooner, contact:
+
+wmanlab@gmail.com
 
 Cheers,
 dpc
