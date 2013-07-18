@@ -104,7 +104,7 @@ class Motor(Connection):
         self.MicroStep = self._get_ms()
         self._set_var('S1','3,0,0') # limit switch for home 
         self._set_var('S2','2,0,0')# limit switch for farthest end
-        self._set_var('LM', 2)
+        self._set_var('LM', 3)
         self._set_var('P',0)
         self._set_var('A',51200)
 
@@ -203,6 +203,7 @@ class Motor(Connection):
 
     def return_home(self):
         '''Return the motor to home position, which is at the limit switch in the bottom left corner. '''
+        self.clear_error()
         error_status = False
         self.con.write('SL -51200')# 5mm per second
         while error_status == False:

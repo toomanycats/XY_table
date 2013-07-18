@@ -20,7 +20,7 @@ class VnaTools(object):
         
         print "Opening connection to analyzer \n"
         self.chan = g.find(analyzer_name)
-        print "VNA channel is %s \n" %str(chan)
+        print "VNA channel is %s \n" %str(self.chan)
     
         self.check_for_errors()# head off synxtax errors and corrupted buffer
         g.write(self.chan,"FORM4")#set up ascii format    
