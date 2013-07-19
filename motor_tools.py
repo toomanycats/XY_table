@@ -100,15 +100,15 @@ class Motor(Connection):
         
     def main(self):
         '''Sets the basic parameters of the motor. '''
-#         self.open()
         self.clear_error()
         self.MicroStep = self._get_ms()
         self._set_var('S1','3,0,0') # limit switch for home 
         self._set_var('S2','2,0,0')# limit switch for farthest end
         self._set_var('LM', 5)# no decel ramp, stops all motion that dir
-        self._set_var('P',0)
-        self._set_var('A',51200)
-
+        self._set_var('A',51200) # acceleration
+        self._set_var('VM',100000)# max velocity
+        self._set_var('VI',50)# initial velocity
+       
     def _check_reached_limit_switch(self):
         '''Query the motor to determine if either limit switch has been reached. Returns 
         True is a limit has been tripped or False if it has not. '''
@@ -202,8 +202,9 @@ class Motor(Connection):
         while error_status == False:
             error_status = self._check_reached_limit_switch()
         self.write('SL 0') # stop the slew movement
-        sleep(0.7)
+        sleep(0.1)
         self.clear_error()
+        sleep(0.1)
         self.set_pos_as_start()
 
     def move_rel(self, linear_dist):
