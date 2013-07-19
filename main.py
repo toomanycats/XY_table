@@ -62,6 +62,7 @@ def set_sample_origin():
         config.Y_origin = float(raw_input("Enter the Y origin of the sample: "))
         mx.move_absolute(config.X_origin)
         my.move_absolute(config.Y_origin)
+
     elif flag == 'n':
         print "Moving sample to roughly center, this will be the sample origin.\n"    
         mx.move_absolute(0.20)
@@ -104,8 +105,8 @@ try:
      
     ## Motor instances 
     mx,my = motor_tools.Connection().connect_to_ports()
-    mx.main()
-    my.main()
+    mx.main(acceleration = 51200, max_vel = 100000, init_vel = 100)
+    my.main(acceleration = 51200, max_vel = 100000, init_vel = 100)
     # return motors to home limit switches
     mx.return_home()
     my.return_home()

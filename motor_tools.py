@@ -81,9 +81,9 @@ class Motor(Connection):
         #self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.con = serial_con
         self.codetools = CodeTools()
-        self._LIMIT_METERS = 0.1 # maximum travel in meters
-        self.CurrentPos = 0.0
-        self._CurrentStep = 0
+        #self._LIMIT_METERS = 0.1 # maximum travel in meters
+        #self.CurrentPos = 0.0
+        #self._CurrentStep = 0
         self.y_lock = False
         self._steps_per_rev =  {'256':51200,'128':25600,'64':12800,'32':6400,
                                 '16':3200,'8':1600,'4':800,'2':400,'1':200,
@@ -98,16 +98,16 @@ class Motor(Connection):
                        25: 'Tried to set a read only variable'
                          }
         
-    def main(self):
+    def main(self, acceleration, max_vel, init_vel):
         '''Sets the basic parameters of the motor. '''
         self.clear_error()
         self.MicroStep = self._get_ms()
         self._set_var('S1','3,0,0') # limit switch for home 
         self._set_var('S2','2,0,0')# limit switch for farthest end
-        self._set_var('LM', 5)# no decel ramp, stops all motion that dir
-        self._set_var('A',51200) # acceleration
-        self._set_var('VM',100000)# max velocity
-        self._set_var('VI',50)# initial velocity
+        self._set_var('LM', 2)# decel ramp, stops all motion that dir
+        self._set_var('A',acceleration) # acceleration
+        self._set_var('VM',max_vel)# max velocity
+        self._set_var('VI',init_vel)# initial velocity
        
     def _check_reached_limit_switch(self):
         '''Query the motor to determine if either limit switch has been reached. Returns 
@@ -193,7 +193,7 @@ class Motor(Connection):
             list = self.con.readlines()
             if list[2].strip('\r\n') == '0': 
                 Flag = False       
-                
+
     def return_home(self):
         '''Return the motor to home position, which is at the limit switch in the bottom left corner. '''
         self.clear_error()
@@ -356,7 +356,8 @@ class Motor(Connection):
         '''Move the motor to an absolute position wrt to the limit switch HOME. '''
         steps = self._calc_steps(pos)
         self.con.write('MA %i\r\n' %steps)
-    
+        sleep(0.1)
+        self._motor_stopped()
     
 
                 

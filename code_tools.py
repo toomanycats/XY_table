@@ -74,8 +74,8 @@ class ConfigureDataSet(object):
         else:
             self.Freq_num_pts = int(raw_input("Enter the number of points that the analyzer is set to take: "))
     
-        self.X_length = float(raw_input("Enter the length along X in meters: "))
-        self.Y_length = float(raw_input("Enter the length along Y in meters: "))
+        self.X_length = float(raw_input("Enter the length of the sample along X in meters: "))
+        self.Y_length = float(raw_input("Enter the length of the sample along Y in meters: "))
         self.X_res = float(raw_input("Enter the distance between X data points in meters: "))
         self.Y_res = float(raw_input("Enter the distance between Y data points in meters: "))
         if self.X_res >= self.X_length or self.Y_res >= self.Y_length:
