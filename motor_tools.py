@@ -84,6 +84,7 @@ class Motor(Connection):
         self._LIMIT_METERS = 0.1 # maximum travel in meters
         self.CurrentPos = 0.0
         self._CurrentStep = 0
+        self.y_lock = False
         self._steps_per_rev =  {'256':51200,'128':25600,'64':12800,'32':6400,
                                 '16':3200,'8':1600,'4':800,'2':400,'1':200,
                                 '250':50000,'200':40000,'125':25000,'100':2000,
@@ -93,8 +94,8 @@ class Motor(Connection):
         self.Error_codes = {20:'Tried to set unknown variable or flag',
                        21:'Tried to set an incorrect value',
                        30:'Unknown label or user variable',
-                       24:'Illegal data entered'
-
+                       24:'Illegal data entered',
+                       25: 'Tried to set a read only variable'
                          }
         
     def main(self):
@@ -104,7 +105,7 @@ class Motor(Connection):
         self.MicroStep = self._get_ms()
         self._set_var('S1','3,0,0') # limit switch for home 
         self._set_var('S2','2,0,0')# limit switch for farthest end
-        self._set_var('LM', 3)
+        self._set_var('LM', 5)# no decel ramp, stops all motion that dir
         self._set_var('P',0)
         self._set_var('A',51200)
 
@@ -113,13 +114,14 @@ class Motor(Connection):
         True is a limit has been tripped or False if it has not. '''
         error_status = False
         self.con.write('PR ER\r\n')#check if reached limit switch
-        sleep(0.07)
+        sleep(0.1)
         pat = '83\r\n|84\r\n' # boolean "or" in the regex
         out_put = self._loop_structure(pat)
         if out_put == '83\r\n' or out_put == '84\r\n':
             error_status = True    
         if out_put == '84\r\n':
             print "Reached limit switch at HOME. \n"
+            self.y_lock = True
         elif out_put == '83\r\n':
             print "Reached limit switch at farthest end. \n"    
 
@@ -128,9 +130,9 @@ class Motor(Connection):
     def clear_error(self):
         '''Query the motor for errors, return the error code and clear the errors. '''
         print "clearing errors \n"
-        self._set_var('ER', 0, True)
-        self._set_var('ER', 0, True)
-#         self.write('PR ER')
+#        self._set_var('ER', 0, True) # error code
+        self.write('PR ER')
+        self.write('ER 0') # not using _set_var() b/c there's not = sign used for this op
 #         sleep(0.1)
 #         self.write('PR EF')
 #         sleep(0.1)
@@ -177,30 +179,21 @@ class Motor(Connection):
         steps = float(linear_dist)/self._meters_per_rev * float((self._steps_per_rev[str(self.MicroStep)]))
          
         return int(round(steps)) 
-
-    def _check_limits(self, steps):
-        '''Idea s to not allow a movement far past the sample boundary...not using it anymore. '''
-        new_pos = self.CurrentPos + self._calculate_pos(steps)
-        if new_pos >= self._LIMIT_METERS:
-            print "You have asked for a new position that will exceed the LIMIT variable. \n"
-            return True
-        else:
-            return False
-  
-    def _query_pos(self, target):
+ 
+    def _motor_stopped(self):
         '''Used as a poll of the location of a motor, so that the program can spit out the 
         new position after the motor has arrived. It also checks if a limit switch has been 
         tripped. '''
-        Flag = False
-        while Flag == False:
-            current_step = self._get_current_step()
-            sleep(0.07)
-            current_pos = float(self._calculate_pos(current_step))
-            #print current_pos
-            error_status = self._check_reached_limit_switch()
-            if abs(current_pos - target) < 1e-6 or error_status:
-                Flag = True
-
+        Flag = True
+        self.con.flushOutput()# readlines() flushes the output too
+        sleep(0.1)
+        while Flag:
+            self.con.write('PR MP\r\n') # flag for moving to position
+            sleep(0.1)
+            list = self.con.readlines()
+            if list[2].strip('\r\n') == '0': 
+                Flag = False       
+                
     def return_home(self):
         '''Return the motor to home position, which is at the limit switch in the bottom left corner. '''
         self.clear_error()
@@ -217,11 +210,14 @@ class Motor(Connection):
         '''Tell the motor to move a linear distance as a relative position.'''
         steps = self._calc_steps(linear_dist)
         sleep(0.1)
-        self.write('MR %i' %steps)
-        self._query_pos(linear_dist + self.CurrentPos)
+        self.write('MR %i' %steps, echk = True)
+        self._motor_stopped()
         self._CurrentStep = self._get_current_step()
         self.CurrentPos = float(self._calculate_pos(self._CurrentStep))
         print "New Pos: %s " %self.codetools.ToSI(self.CurrentPos)
+        limit_flag = self._check_reached_limit_switch()
+        if limit_flag:
+            self.clear_error()
                   
     def write(self, arg, echk = False):
         '''Write a command to the motor where the lines feed and carriage return are automatically included.
@@ -268,15 +264,21 @@ class Motor(Connection):
         sleep(0.1)
 
     def _check_for_mcode_error(self):
-        pat = '.*\?.*'
-        item = self._loop_structure(pat)
-        if item is not "unknown":
+        self.con.flushOutput()
+        sleep(0.1)
+        self.con.write('PR EF\r\n')
+        sleep(0.1)
+        list = self.con.readlines() #output: ['PR EF\r\n', '\n', '1\r\n', '>']
+        if list[2].strip('\r\n') == '1':
             self._get_error_code()
+        #pat = '.*\?.*'
+        #item = self._loop_structure(pat)
+        #if item is not "unknown":
+        #     self._get_error_code()
 
     def _get_error_code(self):
-        self.con.flushOutput()
         self.con.write('PR ER\r\n')
-        pat = '[0-9]+\r\n'
+        pat = '[1-9]+\r\n'
         error_code = self._loop_structure(pat)
         error_code = int(error_code.replace('\r\n',''))
         if self.Error_codes.has_key(error_code):
@@ -346,8 +348,8 @@ class Motor(Connection):
         '''Using the limit swictches, the motors return to home, 
         then this pos is set as the start.'''
         self._set_var('P', 0, True)
-        self._CurrentStep = self._get_current_step()
-        self.CurrentPos = self._calculate_pos(self._CurrentStep)
+        self._CurrentStep = 0
+        self.CurrentPos = 0
 
     def move_absolute(self, pos):
         '''Move the motor to an absolute position wrt to the limit switch HOME. '''
