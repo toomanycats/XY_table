@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 
 def loop_along_sample():
     '''The real meat of the experiment is controlled here. The sample is
-    looped across and take is taken and saved. '''
+    looped across and data is taken and saved. The motors move along the positive 
+    x axis, then return to the x origin, move positive y axis, then repeat the x movements.'''
     data_point = 0 # used to name the individual data point files. 
     index_x = 0
     for index_y in xrange(0,config.Num_y_pts):
@@ -45,6 +46,7 @@ def take_data(data_point, index_y, index_x):
     plottools.plot(real_array, imag_array)
 
 def _take_data():
+    '''Sub routine of take_data() that deals with the single or sweep mode. '''
     if config.mode == 'sweep':
         data = vna.take_sweep_data()
     elif config.mode == 'single':
@@ -67,10 +69,11 @@ def set_sample_origin():
         print "Moving sample to roughly center, this will be the sample origin.\n"    
         mx.move_absolute(0.20)
         my.move_absolute(0.20)
-        config.X_origin = mx._calculate_pos(mx._CurrentStep)
-        config.Y_origin = my._calculate_pos(my._CurrentStep)
+        config.X_origin = mx.CurrentPos
+        config.Y_origin = my.CurrentPos
     else:
-        raise Exception, "Not a 'y' or a 'n'."
+        print "You did not enter a 'y' or a 'n'."
+        set_sample_origin()
 
 def review_config_settings(config):
     '''Print the values stored in the config object and prompt for changes. '''
@@ -133,8 +136,8 @@ try:
     my.move_absolute(config.Y_origin)
     
     # close all devices and free ports.
-    mx.close()
-    my.close()
+    #mx.close()
+    #my.close()
     vna.close()
 
 except ValueError:

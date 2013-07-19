@@ -81,10 +81,6 @@ class Motor(Connection):
         #self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.con = serial_con
         self.codetools = CodeTools()
-        #self._LIMIT_METERS = 0.1 # maximum travel in meters
-        #self.CurrentPos = 0.0
-        #self._CurrentStep = 0
-        self.y_lock = False
         self._steps_per_rev =  {'256':51200,'128':25600,'64':12800,'32':6400,
                                 '16':3200,'8':1600,'4':800,'2':400,'1':200,
                                 '250':50000,'200':40000,'125':25000,'100':2000,
@@ -358,7 +354,8 @@ class Motor(Connection):
         self.con.write('MA %i\r\n' %steps)
         sleep(0.1)
         self._motor_stopped()
-    
+        self._CurrentStep = self._get_current_step()
+        self.CurrentPos = float(self._calculate_pos(self._CurrentStep))
 
                 
            
