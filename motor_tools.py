@@ -189,7 +189,7 @@ class Motor(Connection):
         sleep(0.1)
         while Flag:
             self.con.write('PR MP\r\n') # flag for moving to position
-            sleep(0.1)
+            sleep(0.5)
             list = self.con.readlines()
             if list[2].strip('\r\n') == '0': 
                 Flag = False       
