@@ -128,6 +128,12 @@ try:
     # plotting 
     plottools = code_tools.PlotTools(config)
     
+    ### go into interactive mode to jog the motors or do additional placement or handle the unforeseen 
+    interactive = raw_input("Do you want to drop into an interactive shell for manual control ?(y/n):")
+    if interactive == 'y':
+        print "Opening an interactive terminal, press Shift-Control-D to exit."
+        code.interact(local=locals())
+        
     # Where the work is done on the sample
     loop_along_sample()
     # done collecting data from a sample.
