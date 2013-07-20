@@ -8,6 +8,25 @@ import numpy as np
 import traceback
 import matplotlib.pyplot as plt
 
+def open_interactive():
+    '''Opens an interactive interpreter that has access to the local variables. Exit with "exit()" '''
+    try:
+        get_ipython
+    except NameError:
+        banner=exit_msg=''
+    else:
+        banner = '*** You are now in the ipython interpreter, exit with "exit()" ***'
+        exit_msg = '*** Back in main program. ***'
+
+    # First import the embed function
+    from IPython.frontend.terminal.embed import InteractiveShellEmbed
+    # Now create the IPython shell instance. Put ipshell() anywhere in your code
+    # where you want it to open.
+    ipshell = InteractiveShellEmbed(banner1=banner, exit_msg=exit_msg)
+
+    return ipshell
+
+
 def loop_along_sample():
     '''The real meat of the experiment is controlled here. The sample is
     looped across and data is taken and saved. The motors move along the positive 
@@ -131,9 +150,9 @@ try:
     ### go into interactive mode to jog the motors or do additional placement or handle the unforeseen 
     interactive = raw_input("Do you want to drop into an interactive shell for manual control ?(y/n):")
     if interactive == 'y':
-        print "Opening an interactive terminal, press Shift-Control-D to exit."
-        code.interact(local=locals())
-        
+        ipshell = open_interactive()
+        ipshell()
+
     # Where the work is done on the sample
     loop_along_sample()
     # done collecting data from a sample.
