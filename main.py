@@ -7,6 +7,8 @@ import code
 import numpy as np
 import traceback
 import matplotlib.pyplot as plt
+#from IPython.frontend.terminal.embed import InteractiveShellEmbed
+from IPython import Shell
 
 def open_interactive():
     '''Opens an interactive interpreter that has access to the local variables. Exit with "exit()" '''
@@ -16,16 +18,13 @@ def open_interactive():
         banner=exit_msg=''
     else:
         banner = '*** You are now in the ipython interpreter, exit with "exit()" ***'
-        exit_msg = '*** Back in main program. ***'
-
-    # First import the embed function
-    from IPython.frontend.terminal.embed import InteractiveShellEmbed
+        exit_msg = '*** Back in main program. ***'    
     # Now create the IPython shell instance. Put ipshell() anywhere in your code
     # where you want it to open.
-    ipshell = InteractiveShellEmbed(banner1=banner, exit_msg=exit_msg)
+    #ipshell = InteractiveShellEmbed(banner1=banner, exit_msg=exit_msg)
+    ipshell = Shell.IPShellEmbed()
 
     return ipshell
-
 
 def loop_along_sample():
     '''The real meat of the experiment is controlled here. The sample is
