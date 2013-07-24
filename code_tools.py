@@ -317,7 +317,7 @@ class PlotTools(object):
         dummy = np.zeros((self.config.Num_x_pts,self.config.Num_y_pts))
  
         im1 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
-        plt.colorbar(im1)   
+        #plt.colorbar(im1)   
  
         im2 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
         plt.colorbar(im2)  
@@ -329,7 +329,7 @@ class PlotTools(object):
         
         plt.subplot(1,2,1)
         im1 = plt.imshow(mag[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
-        plt.title('Magnitude Linear Scale')
+        plt.title('Electric Field Linear Scale')
         plt.xlabel('X axis points')
         plt.ylabel('Y axis points')
 

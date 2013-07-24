@@ -26,20 +26,20 @@ def open_interactive():
 
     return ipshell
 
-def loop_along_sample():
+def loop_along_sample(direction):
     '''The real meat of the experiment is controlled here. The sample is
-    looped across and data is taken and saved. The motors move along the positive 
-    x axis, then return to the x origin, move positive y axis, then repeat the x movements.'''
+    looped across and data is taken and saved. The motors move along the negative
+    x axis, then return to the x origin, move negative along y axis, then repeat the x movements.'''
     data_point = 0 # used to name the individual data point files. 
     index_x = 0
     for index_y in xrange(0,config.Num_y_pts):
         take_data(data_point, index_y, index_x)
         for index_x in xrange(0,config.Num_x_pts):
-            mx.move_rel(config.X_res)
+            mx.move_rel(direction*config.X_res)
             take_data(data_point, index_y, index_x)
             data_point += 1         
-        mx.move_rel(-1*config.X_length)      
-        my.move_rel(config.Y_res)   
+        mx.move_rel(-1*direction*config.X_length) # swing back to x = 0     
+        my.move_rel(direction*config.Y_res)   
 
 def take_data(data_point, index_y, index_x):
     '''Calls to the analyzer are made and the data is recorded. '''
@@ -84,11 +84,9 @@ def set_sample_origin():
         my.move_absolute(config.Y_origin)
 
     elif flag == 'n':
-        print "Moving sample to roughly center, this will be the sample origin.\n"    
+        print "Moving sample to roughly center.\n"    
         mx.move_absolute(0.20)
         my.move_absolute(0.20)
-        config.X_origin = mx.CurrentPos
-        config.Y_origin = my.CurrentPos
     else:
         print "You did not enter a 'y' or a 'n'."
         set_sample_origin()
@@ -106,8 +104,6 @@ def review_config_settings(config):
     else:
         print "Enter 'y' or 'n'."
         review_config_settings(config)
-
-
 
 ### test the load from files method
     #     codetools = code_tools.ArrayTools(config)
@@ -136,11 +132,8 @@ try:
     ## analyzer instance
     vna = vna_tools.VnaTools(analyzer_name = "VNA")# should open a connection on channel 16.
     
-    # save the readme file to the directory
-    arraytools = code_tools.ArrayTools(config)
-    arraytools.save_readme()
-    
     # make an array to hold the data for plotting or in vivo testing
+    arraytools = code_tools.ArrayTools(config)
     real_array =   arraytools.make_3d_array()
     imag_array = arraytools.make_3d_array()
     # plotting 
@@ -151,9 +144,16 @@ try:
     if interactive == 'y':
         ipshell = open_interactive()
         ipshell()
-
+    
+    # reset the origin if 
+    config.X_origin = mx.CurrentPos
+    config.Y_origin = my.CurrentPos
+    
+    # save the readme file to the directory
+    arraytools.save_readme()
+    
     # Where the work is done on the sample
-    loop_along_sample()
+    loop_along_sample(direction = -1)
     # done collecting data from a sample.
     print "returning to origin \n"
     mx.move_absolute(config.X_origin)
