@@ -266,6 +266,12 @@ Y Origin = %(y_origin)s
         
         return mag_data 
 
+    def get_intensity(self,data):
+        inten_data = np.zeros(data.shape, dtype=float)
+        inten_data = np.real(data)**2 + np.imag(data)**2
+        
+        return inten_data
+
     def get_phase(self,data):
         '''Takes cols of complex and returns col of phase '''
         phase_data = np.zeros(data.shape,dtype=float)
@@ -337,19 +343,19 @@ class PlotTools(object):
         plt.colorbar(im2)  
           
                
-    def plot(self, mag, phase, z=0):
+    def plot(self, real, intensity, z=0):
         '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
         xy plane you want to plot. For single point mode, z = 0 (default), for sweep you must choose. '''
         
         plt.subplot(1,2,1)
-        im1 = plt.imshow(mag[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        im1 = plt.imshow(real[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
         plt.title('Electric Field Linear Scale')
         plt.xlabel('X axis points')
         plt.ylabel('Y axis points')
 
         plt.subplot(1,2,2)
-        im2 = plt.imshow(phase[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
-        plt.title('Phase Linear Scale') 
+        im2 = plt.imshow(intensity[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        plt.title('Intensity ( x^2 + y^2) Linear Scale') 
         plt.xlabel('X axis points')
         plt.ylabel('Y axis points')
         

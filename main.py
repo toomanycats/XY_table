@@ -51,17 +51,17 @@ def take_data(data_point, index_y, index_x):
     # send to mag_array for in-vivo plotting
     real_array[:,index_y, index_x] = real_data
     # save the mag data from a single point to it's own file
-        # in the Single_Point dir
     arraytools.save_data_to_file(data_point, real_data, 'real')
-    # get the phase from the raw data 
+    #get imaginary data
     imag_data = arraytools.get_imag(data)
-    # send the phase data to the in-vivo phase_array
-    imag_array[:,index_y,index_x] = imag_data
     # save the phase data from a single point to it's own file
-        # in the Single_Point dir
     arraytools.save_data_to_file(data_point, imag_data, 'imag')    
+    # get the intensity for plotting only
+    inten_data = arraytools.get_intensity(data)
+    # send the intensity data to the in-vivo phase_array
+    inten_array[:,index_y,index_x] = inten_data
     # plot the in-vivo data
-    plottools.plot(real_array, imag_array)
+    plottools.plot(real_array, inten_array)
 
 def _take_data():
     '''Sub routine of take_data() that deals with the single or sweep mode. '''
@@ -109,7 +109,7 @@ def review_config_settings(config):
     #     codetools = code_tools.ArrayTools(config)
     #     real_data = codetools.load_data_files('real')
     #     real_array3d = codetools.reshape_1D_to_3D(real_data)
-    #     imag_data = codetools.load_data_files('imag')
+    #     inten_data = codetools.load_data_files('imag')
     #     imag_array3d = codetools.reshape_1D_to_3D(imag_data)
     #     plottools.plot(real_array3d,imag_array3d)    
 try:
@@ -135,7 +135,7 @@ try:
     # make an array to hold the data for plotting or in vivo testing
     arraytools = code_tools.ArrayTools(config)
     real_array =   arraytools.make_3d_array()
-    imag_array = arraytools.make_3d_array()
+    inten_array = arraytools.make_3d_array()
     # plotting 
     plottools = code_tools.PlotTools(config)
     
