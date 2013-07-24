@@ -33,3 +33,7 @@ class Configuration(object):
     def write_config_file(self):
         with open(self.config_path, 'wb') as configfile:
             self.config.write(configfile)
+            
+if __name__ == "__main__":
+    Configuration().read_config()
+    Configuration().write_config_file()

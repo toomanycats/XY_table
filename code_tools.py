@@ -9,6 +9,7 @@ from os import path,makedirs
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.io as sio
+import config
 
 class ConfigureDataSet(object):
     def __init__(self):
@@ -56,6 +57,19 @@ class ConfigureDataSet(object):
 
     def get_config_from_user(self): 
         '''Have the user fill out config values interactively. ''' 
+        try:
+            config_entries = config.Configuration().read_config()
+        except ConfigParser.NoSectionError:
+            print "There's no config file found."
+        
+        test_flag = raw_input("Is this run going to be a TEST or regular experiment? (test/regular):")
+        
+        if test_flag == 'TEST':
+            self.DirectoryRoot = config_entries['test_data_path']
+        elif test_flag == 'regular':
+            self.DirectoryRoot = config_entries['prod_data_path']
+        else:
+            raise Exception, "Not a valid entry."        
         
         self.mode = raw_input("Enter the mode 'sweep' or 'single':")
         self.ExperimentDir = raw_input("Enter the name of the directotry to hold this experiment: ")
