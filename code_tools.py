@@ -314,6 +314,13 @@ Y Origin = %(y_origin)s
         fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,fname)
 
         np.savetxt(fullpath, data)    
+
+    def save_data_as_matlab(self, real_array, imag_array):
+        real_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_REAL.mat')
+        sio.savemat(real_data_path, {'real_array':real_array})
+        
+        imag_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_IMAG.mat')
+        sio.savemat(real_data_path, {'imag_array':imag_array})
                                   
 class PlotTools(object):
     def __init__(self, Config):

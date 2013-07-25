@@ -7,22 +7,19 @@ import code
 import numpy as np
 import traceback
 import matplotlib.pyplot as plt
-#from IPython.frontend.terminal.embed import InteractiveShellEmbed
 from IPython import Shell
+import scipy.io as sio
 
 def open_interactive():
     '''Opens an interactive interpreter that has access to the local variables. Exit with "exit()" '''
-    try:
-        get_ipython
-    except NameError:
-        banner=exit_msg=''
-    else:
-        banner = '*** You are now in the ipython interpreter, exit with "exit()" ***'
-        exit_msg = '*** Back in main program. ***'    
+    
+    get_ipython
     # Now create the IPython shell instance. Put ipshell() anywhere in your code
     # where you want it to open.
     #ipshell = InteractiveShellEmbed(banner1=banner, exit_msg=exit_msg)
     ipshell = Shell.IPShellEmbed()
+    ipshell.banner = '*** You are now in the ipython interpreter, exit with "exit()" ***'
+    ipshell.exit_msg = '*** Back in main program. ***'    
 
     return ipshell
 
@@ -140,7 +137,7 @@ try:
     plottools = code_tools.PlotTools(config)
     
     ### go into interactive mode to jog the motors or do additional placement or handle the unforeseen 
-    interactive = raw_input("Do you want to drop into an interactive shell for manual control ?(y/n):")
+    interactive = raw_input("Do you want to drop into an interactive shell for manual control ?(y/n): ")
     if interactive == 'y':
         ipshell = open_interactive()
         ipshell()
@@ -159,9 +156,12 @@ try:
     mx.move_absolute(config.X_origin)
     my.move_absolute(config.Y_origin)
     
+    #save a copy of the plot arrays to a matlab .mat file
+    arraytools.save_data_as_matlab(real_array, imag_array)
+
     # close all devices and free ports.
-    #mx.close()
-    #my.close()
+    mx.close()
+    my.close()
     vna.close()
 
 except ValueError:
