@@ -316,6 +316,10 @@ Y Origin = %(y_origin)s
         outdata = np.zeros((self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))  
         outdata = np.reshape(data,(self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))
         
+        #squeeze the singleton dim if it exists
+        if outdata.ndim == 3 and outdata.shape[0] == 1:
+            outdata = np.squeeze(outdata)
+        
         return outdata
      
     def save_flattened_array(self,data):
@@ -329,12 +333,12 @@ Y Origin = %(y_origin)s
 
         np.savetxt(fullpath, data)    
 
-    def save_data_as_matlab(self, real_array, imag_array):
+    def save_real_and_inten_as_matlab(self, real_array, inten_array):
         real_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_REAL.mat')
         sio.savemat(real_data_path, {'real_array':real_array})
         
-        imag_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_IMAG.mat')
-        sio.savemat(real_data_path, {'imag_array':imag_array})
+        inten_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_INTEN.mat')
+        sio.savemat(inten_data_path, {'inten_array':inten_array})
                                   
 class PlotTools(object):
     def __init__(self, Config):

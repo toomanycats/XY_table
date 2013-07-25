@@ -36,16 +36,18 @@ class Connection(object):
                 if x_port is False and y_port is False: 
                     self.con1.port = '/dev/ttyUSB%s' %port
                     self.con1.open()
+                    sleep(0.5)
                     sn = self._get_sn(self.con1)
                     x_port, y_port = self.assign_serial_num(sn, x_port, y_port, self.con1)
                 else:
                     self.con2.port = '/dev/ttyUSB%s' %port  
                     self.con2.open()
+                    sleep(0.5)
                     sn = self._get_sn(self.con2) 
                     x_port, y_port = self.assign_serial_num(sn, x_port, y_port, self.con2)        
 
             except serial.SerialException:
-                print "%s is not a connected port, trying next.\n" %self.con.port
+                print "%s is not a connected port, trying next.\n" %port
 
         if x_port is False or y_port is False:
             raise Exception, "The x or y motor has not been connected.\n"     
