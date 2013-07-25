@@ -10,6 +10,20 @@ import matplotlib.pyplot as plt
 from IPython import Shell
 import scipy.io as sio
 
+def confirm_origin():
+    bool = raw_input("Do you want to use your current/new position as the origin, or the one previously set? (y/n): ")
+    if bool == 'y':
+        print "Setting current position as sample origin. \n"
+        config.X_origin = mx.CurrentPos
+        config.Y_origin = my.CurrentPos
+    elif bool == 'n':
+        print "Moving sample back to previously defined origin. \n"
+        mx.move_absolute(config.X_origin)
+        my.move_absolute(config.Y_origin) 
+    else:
+        print "Enter 'y' or 'n'. "
+        confirm_origin()       
+
 def open_interactive():
     '''Opens an interactive interpreter that has access to the local variables. Exit with "exit()" '''
     ipshell = Shell.IPShellEmbed()
@@ -106,6 +120,7 @@ try:
     mx,my = motor_tools.Connection().connect_to_ports()
     mx.main(acceleration = 51200, max_vel = 100000, init_vel = 100)
     my.main(acceleration = 51200, max_vel = 100000, init_vel = 100)
+
     # return motors to home limit switches
     mx.return_home()
     my.return_home()
@@ -114,11 +129,12 @@ try:
     ## analyzer instance
     vna = vna_tools.VnaTools(analyzer_name = "VNA")# should open a connection on channel 16.
     
-    # make an array to hold the data for plotting or in vivo testing
+    # make an array to hold the data for plotting , vivo testing and .mat save
     arraytools = code_tools.ArrayTools(config)
     real_array =   arraytools.make_3d_array()
     imag_array = arraytools.make_3d_array()
     inten_array = arraytools.make_3d_array()
+
     # plotting 
     plottools = code_tools.PlotTools(config)
     
@@ -128,22 +144,22 @@ try:
         ipshell = open_interactive()
         ipshell()
     
-    # reset the origin if 
-    config.X_origin = mx.CurrentPos
-    config.Y_origin = my.CurrentPos
-    
+    # origin could have changed during interactive setting
+    confirm_origin()
+
     # Write the config to file.
     config.add_entries() # origin could have changed
     config.write_config_file()
     
     # Where the work is done on the sample
     loop_along_sample(direction = -1)
+
     # done collecting data from a sample.
     print "returning to origin \n"
     mx.move_absolute(config.X_origin)
     my.move_absolute(config.Y_origin)
     
-    #save the numpy arrays as matlab .mat files for easy analysis.
+    #save the numpy arrays as matlab .mat files for easy in house analysis.
     arraytools.save_real_and_inten_as_matlab(real_array, inten_array)
 
     # close all devices and free ports.
