@@ -273,12 +273,12 @@ Y Origin = %(y_origin)s
         '''loads all data point files into a 2D array of either mag or phase data.The return has
         columns of row data. Use reshape_1D_to_3D() to get back a numpy 3D array.'''
     
-        if type == 'mag':
+        if type == 'real':
             base_dir = self.config.real_point_dir
-        elif type == 'phase':
+        elif type == 'imag':
             base_dir = self.config.imag_point_dir    
         else:
-            raise Exception, "Type was not a valid choice of 'mag' or 'phase'. "    
+            raise Exception, "Type was not a valid choice of 'real' or 'imag'. "    
 
         num_files = self.config.Num_x_pts * self.config.Num_y_pts
         data = np.zeros((self.config.Freq_num_pts, num_files))
