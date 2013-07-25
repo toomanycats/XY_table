@@ -12,14 +12,9 @@ import scipy.io as sio
 
 def open_interactive():
     '''Opens an interactive interpreter that has access to the local variables. Exit with "exit()" '''
-    
-    get_ipython
-    # Now create the IPython shell instance. Put ipshell() anywhere in your code
-    # where you want it to open.
-    #ipshell = InteractiveShellEmbed(banner1=banner, exit_msg=exit_msg)
     ipshell = Shell.IPShellEmbed()
     ipshell.banner = '*** You are now in the ipython interpreter, exit with "exit()" ***'
-    ipshell.exit_msg = '*** Back in main program. ***'    
+    ipshell.exit_msg = '\n\n*** Back in main program. ***\n'    
 
     return ipshell
 
@@ -43,21 +38,18 @@ def take_data(data_point, index_y, index_x):
     print "Taking transmission data. \n"
     # get the raw data as complex pairs
     data = _take_data()
-    # get the mag from the raw data
+
     real_data = arraytools.get_real(data)
-    # send to mag_array for in-vivo plotting
     real_array[:,index_y, index_x] = real_data
-    # save the mag data from a single point to it's own file
     arraytools.save_data_to_file(data_point, real_data, 'real')
-    #get imaginary data
+   
     imag_data = arraytools.get_imag(data)
-    # save the phase data from a single point to it's own file
+    imag_array[:,index_y, index_x] = imag_data
     arraytools.save_data_to_file(data_point, imag_data, 'imag')    
-    # get the intensity for plotting only
+   
     inten_data = arraytools.get_intensity(data)
-    # send the intensity data to the in-vivo phase_array
     inten_array[:,index_y,index_x] = inten_data
-    # plot the in-vivo data
+
     plottools.plot(real_array, inten_array)
 
 def _take_data():
@@ -73,7 +65,7 @@ def _take_data():
 
 def set_sample_origin():
     '''The user can set the origin or center of the table will be used. '''
-    flag = raw_input("If you know the origin cordinates you'd like to use, enter 'y', or 'n':  y/n")
+    flag = raw_input("If you know the origin cordinates you'd like to use, enter 'y', or 'n':  (y/n): ")
     if flag == 'y':
         config.X_origin = float(raw_input("Enter the X origin of the sample: "))
         config.Y_origin = float(raw_input("Enter the Y origin of the sample: "))
@@ -101,14 +93,7 @@ def review_config_settings(config):
     else:
         print "Enter 'y' or 'n'."
         review_config_settings(config)
-
-### test the load from files method
-    #     codetools = code_tools.ArrayTools(config)
-    #     real_data = codetools.load_data_files('real')
-    #     real_array3d = codetools.reshape_1D_to_3D(real_data)
-    #     inten_data = codetools.load_data_files('imag')
-    #     imag_array3d = codetools.reshape_1D_to_3D(imag_data)
-    #     plottools.plot(real_array3d,imag_array3d)    
+   
 try:
     # get the config setup interactively
     config = code_tools.ConfigureDataSet()
@@ -132,6 +117,7 @@ try:
     # make an array to hold the data for plotting or in vivo testing
     arraytools = code_tools.ArrayTools(config)
     real_array =   arraytools.make_3d_array()
+    imag_array = arraytools.make_3d_array()
     inten_array = arraytools.make_3d_array()
     # plotting 
     plottools = code_tools.PlotTools(config)
@@ -156,8 +142,8 @@ try:
     mx.move_absolute(config.X_origin)
     my.move_absolute(config.Y_origin)
     
-    #save a copy of the plot arrays to a matlab .mat file
-    arraytools.save_data_as_matlab(real_array, imag_array)
+    #save the numpy arrays as matlab .mat files for easy analysis.
+    arraytools.save_real_and_inten_as_matlab(real_array, inten_array)
 
     # close all devices and free ports.
     mx.close()
