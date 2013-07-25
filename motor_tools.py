@@ -13,12 +13,15 @@ class Connection(object):
     def _get_sn(self, con):
         '''Query the motor for it's serial number. '''
         con.write('PR SN\r\n')
-        sleep(0.5)
-        pat = '[0-9]{9}\r\n'
-        out = self._loop_structure(pat, con)
-        out = out.replace('\r\n','')
+        sleep(0.3)
+        con.flushOutput()
+        sleep(0.3)
+        output = con.readlines()
+        sleep(0.3)
+        sn = output[2]
+        sn = sn.replace('\r\n','')
 
-        return out
+        return sn
      
     def connect_to_ports(self):
         '''Try to open motors on ports 0-9. Returns motor objects mx, my . '''
@@ -47,22 +50,6 @@ class Connection(object):
         if x_port is False or y_port is False:
             raise Exception, "The x or y motor has not been connected.\n"     
 
-    def _loop_structure(self, pat, con):
-            '''A method used to complete all the queries in this class. The mdrive motor
-            echos all sent commands and returns values as a list. This method uses regex to 
-            sift out the desired information for that list. Notice the pattern sent in is a
-            regex pattern pertinent to the task at hand.'''
-            sleep(0.5)
-            re_obj = re.compile(pat)
-            readback = con.readlines()
-            sleep(0.5)
-            for item in readback:
-                if re_obj.match(item) is not None:
-                    return item
-            
-            raise Exception, """Pattern match failed in loop structure to get serial number.
-This can happen if a connection to the motor(s) was closed and re-opened. The OS kernel might not have 
-cleared the port even though the program has closed the socket. Try the program again."""
 
     def assign_serial_num(self, sn, x_port, y_port, con):
         if sn == '269120375' and y_port is False:
