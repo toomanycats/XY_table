@@ -12,54 +12,79 @@ class Connection(object):
         
     def _get_sn(self, con):
         '''Query the motor for it's serial number. '''
-        con.write('PR SN\r\n')
-        sleep(0.3)
+        con.flushInput()
+        sleep(0.5)
         con.flushOutput()
-        sleep(0.3)
-        output = con.readlines()
-        sleep(0.3)
-        sn = output[2]
+        sleep(0.5)
+        con.write('PR SN\r\n')
+        sleep(0.5)
+        pat = "[0-9]7\r\n | [0-9]7\n"
+        sn = self._loop_structure(pat)
+        print output
         sn = sn.replace('\r\n','')
 
         return sn
      
     def connect_to_ports(self):
         '''Try to open motors on ports 0-9. Returns motor objects mx, my . '''
-        x_port = False
-        y_port = False
+        x_port_flag = False
+        y_port_flag = False
         
         for port in xrange(0,9):
             try:
-                if x_port is True and y_port is True:
+                if x_port_flag is True and y_port_flag is True:
                     return self.motor_x, self.motor_y 
 
-                if x_port is False and y_port is False: 
+                if x_port_flag is False and y_port_flag is False: 
                     self.con1.port = '/dev/ttyUSB%s' %port
                     self.con1.open()
-                    sleep(0.5)
+                    sleep(2)
                     sn = self._get_sn(self.con1)
-                    x_port, y_port = self.assign_serial_num(sn, x_port, y_port, self.con1)
+                    x_port_flag, y_port_flag = self.assign_serial_num(sn, x_port_flag, y_port_flag, self.con1)
                 else:
                     self.con2.port = '/dev/ttyUSB%s' %port  
                     self.con2.open()
-                    sleep(0.5)
+                    sleep(2)
                     sn = self._get_sn(self.con2) 
-                    x_port, y_port = self.assign_serial_num(sn, x_port, y_port, self.con2)        
+                    x_port_flag, y_port_flag = self.assign_serial_num(sn, x_port_flag, y_port_flag, self.con2)        
 
             except serial.SerialException:
                 print "%s is not a connected port, trying next.\n" %port
 
-        if x_port is False or y_port is False:
-            raise Exception, "The x or y motor has not been connected.\n"     
+        if x_port_flag is False or y_port_flag is False:
+            print "Connection failed waiting and trying again.\n"
+            try:
+                self.con1.close()
+                self.con2.close()
+            except:
+                pass    
+            sleep(2)
+            self.connect_to_ports()
+            #raise Exception, "The x or y motor has not been connected.\n"     
 
+    def _loop_structure(self, pat):
+        '''A method used to complete all the queries in this class. The mdrive motor
+        echos all sent commands and returns values as a list. This method uses regex to 
+        sift out the desired information for that list. Notice the pattern sent in is a
+        regex pattern pertinent to the task at hand.'''
+        sleep(0.1)
+        re_obj = re.compile(pat)
+        readback = self.con.readlines()
+        for item in readback:
+            if re_obj.match(item) is not None:
+                return item
+
+        return "unknown"
 
     def assign_serial_num(self, sn, x_port, y_port, con):
         if sn == '269120375' and y_port is False:
             y_port = True
             self.motor_y = Motor(con)
+            
         elif sn == '074130197' and x_port is False:
             x_port = True
             self.motor_x = Motor(con)
+            
           
         return x_port, y_port    
 
