@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
-import motor_tools
-import vna_tools
+#import motor_tools
+#import vna_tools
 import code_tools
 import code
 import numpy as np
 import traceback
 import matplotlib.pyplot as plt
-from IPython import Shell
+#from IPython import Shell
 import scipy.io as sio
 
 def open_interactive():
@@ -132,8 +132,9 @@ try:
     config.X_origin = mx.CurrentPos
     config.Y_origin = my.CurrentPos
     
-    # save the readme file to the directory
-    arraytools.save_readme()
+    # Write the config to file.
+    config.add_entries() # origin could have changed
+    config.write_config_file()
     
     # Where the work is done on the sample
     loop_along_sample(direction = -1)

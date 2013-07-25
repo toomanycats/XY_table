@@ -9,10 +9,13 @@ from os import path,makedirs
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.io as sio
-import config
+import ConfigParser
+
 
 class ConfigureDataSet(object):
     def __init__(self):
+        self.config_parser = ConfigParser.RawConfigParser()
+    
         self.Username = getuser() 
         self.Date = datetime.datetime.now()   
         self.DirectoryRoot = '/media/Data'
@@ -37,6 +40,8 @@ class ConfigureDataSet(object):
         self.y_port = ''
         self.real_point_dir = ''
         self.imag_point_dir = ''
+        
+        self. config_path = path.join(self.DirectoryRoot,self.ExperimentDir)
         
     def make_sub_dirs(self):
         p = path.join(self.DirectoryRoot,self.ExperimentDir)
@@ -99,6 +104,65 @@ class ConfigureDataSet(object):
         self.TestSet = 'S21' # transmission always for this experiment
         self.set_xy_num_pts()
         self.make_sub_dirs()
+
+    def add_entries(self):
+        self.config_parser.add_section('Paths')
+        self.config_parser.set('Paths', 'DirectoryRoot', self.DirectoryRoot)
+        self.config_parser.set('Paths', 'ExperimentDir', self.ExperimentDir)
+        self.config_parser.set('Paths', 'FilenamePrefix', self.FileNamePrefix)
+
+        self.config_parser.add_section('User')
+        self.config_parser.set('User','User',self.Username)
+        
+        self.config_parser.add_section('Date')
+        self.config_parser.set('Date', 'Date', self.Date)
+
+        self.config_parser.add_section('Sample')
+        self.config_parser.set('Sample', 'X length', self.X_length)
+        self.config_parser.set('Sample', 'Y length', self.Y_length)
+        self.config_parser.set('Sample', 'Y res', self.Y_res)
+        self.config_parser.set('Sample', 'X origin', self.X_origin)
+        self.config_parser.set('Sample', 'Y origin', self.Y_origin)
+        
+        self.config_parser.add_section('Analyzer')
+        self.config_parser.set('Analyzer', 'Test Set', self.TestSet)
+        self.config_parser.set('Analyzer', 'Mode', self.mode)
+        self.config_parser.set('Analyzer', 'Start Freq', self.FreqStart)
+        self.config_parser.set('Analyzer', 'Stop Freq', self.FreqStop)
+        self.config_parser.set('Analyzer', 'Single Freq', self.SingleFrequency)
+        self.config_parser.set('Analyzer', 'Number Points', self.Freq_num_pts)
+        
+    def load_config(self):
+        '''Reads the config file and sets the class attributes. '''
+        
+        self.config_parser.read(self.config_path)
+        
+        # getfloat() raises an exception if the value is not a float
+        # getint() and getboolean() also do this for their respective types
+        self.DirectoryRoot = self.config_parser.get('Paths', 'DirectoryRoot')
+        self.ExperimentDir = self.config_parser.get('Paths', 'ExperimentDir')
+        self.FileNamePrefix = self.config_parser.get('Paths', 'FilenamePrefix')
+        
+        self.Username = self.config_parser.get('User','User')
+        
+        self.Date = self.config_parser.get('Date', 'Date')
+
+        self.X_length = self.config_parser.get('Sample', 'X length')
+        self.Y_length = self.config_parser.get('Sample', 'Y length')
+        self.Y_res = self.config_parser.get('Sample', 'Y res')
+        self.X_origin = self.config_parser.get('Sample', 'X origin')
+        self.Y_origin = self.config_parser.get('Sample', 'Y origin')
+        
+        self.TestSet = self.config_parser.get('Analyzer', 'Test Set')
+        self.Mode = self.config_parser.get('Analyzer', 'Mode')
+        self.FreqStart = self.config_parser.get('Analyzer', 'Start Freq')
+        self.FreqStop = self.config_parser.get('Analyzer', 'Stop Freq')
+        self.SingleFrequency = self.config_parser.get('Analyzer', 'Single Freq')
+        self.Freq_num_pts = self.config_parser.get('Analyzer', 'Number Points')   
+  
+    def write_config_file(self):
+        with open(self.config_path, 'w') as configfile:
+            self.config_parser.write(configfile)
 
 class CodeTools(object):
     '''Contains methods used for the combination of motor tools and vna tools '''    
@@ -352,8 +416,7 @@ class PlotTools(object):
  
         im2 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
         plt.colorbar(im2)  
-          
-               
+                      
     def plot(self, real, intensity, z=0):
         '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
         xy plane you want to plot. For single point mode, z = 0 (default), for sweep you must choose. '''

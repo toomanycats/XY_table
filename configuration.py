@@ -2,13 +2,9 @@ import ConfigParser
 from os import path
 
 class Configuration(object):
-    '''When adding sections or items, add them in the reverse order of
-     how you want them to be displayed in the actual file.
-     In addition, please note that using RawConfigParser's and the raw
-     mode of ConfigParser's respective set functions, you can assign
-     non-string values to keys internally, but will receive an error
-     when attempting to write to a file or when you get it in non-raw
-     mode. SafeConfigParser does not allow such assignments to take place.'''
+    '''This configuration is set interactively by the user. It can be recalled and used again later.
+    For now, the implementation is that this config simply replaces the earlier README file that contained the 
+    experiment details.'''
 
     def __init__(self):
         self.config = ConfigParser.RawConfigParser()
