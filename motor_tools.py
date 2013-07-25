@@ -18,9 +18,9 @@ class Connection(object):
         sleep(0.5)
         con.write('PR SN\r\n')
         sleep(0.5)
-        pat = "[0-9]7\r\n | [0-9]7\n"
-        sn = self._loop_structure(pat)
-        print output
+        pat = "[0-9]{9}\\r\\n|[0-9]{9}\\n"
+        sn = self._loop_structure(con, pat)
+        print sn
         sn = sn.replace('\r\n','')
 
         return sn
@@ -62,14 +62,14 @@ class Connection(object):
             self.connect_to_ports()
             #raise Exception, "The x or y motor has not been connected.\n"     
 
-    def _loop_structure(self, pat):
+    def _loop_structure(self, con, pat):
         '''A method used to complete all the queries in this class. The mdrive motor
         echos all sent commands and returns values as a list. This method uses regex to 
         sift out the desired information for that list. Notice the pattern sent in is a
         regex pattern pertinent to the task at hand.'''
         sleep(0.1)
         re_obj = re.compile(pat)
-        readback = self.con.readlines()
+        readback = con.readlines()
         for item in readback:
             if re_obj.match(item) is not None:
                 return item
