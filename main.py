@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
-#import motor_tools
-#import vna_tools
+import motor_tools
+import vna_tools
 import code_tools
 import code
 import numpy as np
 import traceback
 import matplotlib.pyplot as plt
-#from IPython import Shell
+from IPython import Shell
 import scipy.io as sio
 
 def open_interactive():
