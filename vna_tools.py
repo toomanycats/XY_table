@@ -3,11 +3,13 @@ import time
 import os
 import sys
 import numpy as np
+import logging
 
 class VnaTools(object):
     '''Library of methods to control an HP8510C Vector Network Analyzer. This module uses
     the ascii format for data transmission.'''
-    def __init__(self,analyzer_name): 
+    def __init__(self,analyzer_name, logfile): 
+        self.log = logging.basicConfig(filename=logfile,level=logging.DEBUG)
         self._open_con(analyzer_name)
         '''The SFSU analyzer must be set to channel 16, which is set in the gpib PCI card config.'''
 
@@ -185,6 +187,7 @@ it is not clear that this is truly the case. I know it's annoying... """
         print "Clearing error from VNA. \n"
         g.write(self.chan,"OUTPERRO")
         error_msg = g.read(self.chan,1000)
+        self.log.debug(error_msg)
         print error_msg + '\n'
             
     def check_for_errors(self):

@@ -127,7 +127,7 @@ try:
     set_sample_origin()
 
     ## analyzer instance
-    vna = vna_tools.VnaTools(analyzer_name = "VNA")# should open a connection on channel 16.
+    vna = vna_tools.VnaTools(analyzer_name = "VNA", config.log_file)
     
     # make an array to hold the data for plotting , vivo testing and .mat save
     arraytools = code_tools.ArrayTools(config)

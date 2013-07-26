@@ -15,7 +15,7 @@ import ConfigParser
 class ConfigureDataSet(object):
     def __init__(self):
         self.config_parser = ConfigParser.RawConfigParser()
-    
+        
         self.Username = getuser() 
         self.Date = datetime.datetime.now()   
         self.DirectoryRoot = '/media/Data'
@@ -41,7 +41,9 @@ class ConfigureDataSet(object):
         self.real_point_dir = ''
         self.imag_point_dir = ''
         
-        self. config_path = path.join(self.DirectoryRoot,self.ExperimentDir)
+    def set_misc_paths(self):
+        self.config_path = path.join(self.DirectoryRoot,self.ExperimentDir)
+        self.log_file = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix+'_LOG.log')
         
     def make_sub_dirs(self):
         p = path.join(self.DirectoryRoot,self.ExperimentDir)
@@ -91,6 +93,7 @@ class ConfigureDataSet(object):
         self.TestSet = 'S21' # transmission always for this experiment
         self.set_xy_num_pts()
         self.make_sub_dirs()
+        self.set_misc_paths()
 
     def add_entries(self):
         self.config_parser.add_section('Paths')
