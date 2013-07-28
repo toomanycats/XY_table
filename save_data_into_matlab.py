@@ -34,7 +34,12 @@ def work(config_path, out_put_path):
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    parser = OptionParser()
+    string = """Use this program to load experiment data and save it into a
+MATLAB .mat format binary. The .mat file will be a struct, with fields 'complex' which
+hold a complex vector or matrix, or the real and imag values, and a frequency vector in field 
+'freq' . You must supply the path to the config file created with the data and the output path. """
+
+    parser = OptionParser(usage = string)
     parser.add_option("-p", "--path", dest="config_path",
                   help="The path to the config file, i.e., /media/Data/Test1")
     parser.add_option("-o", "--out-path", dest="out_put_path",
