@@ -127,7 +127,9 @@ class ConfigureDataSet(object):
         a config file path or the default is the one in the config object,
         config.config_path. '''
         
-        config_path = self.config_path
+        if config_path is None:
+            config_path = self.config_path
+        
         self.config_parser.read(config_path)
         
         # getfloat() raises an exception if the value is not a float
@@ -336,7 +338,10 @@ Y Origin = %(y_origin)s
 
         return phase_data
    
-    def make_freq_vector(self):
+    def get_freq_vector(self, config = None):
+        if config is None:
+            config = self.config
+            
         Deltafreq = (self.config.freqstop - self.config.freqstart) / float(self.config.Freq_num_pts)
         freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
 
