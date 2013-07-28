@@ -122,10 +122,12 @@ class ConfigureDataSet(object):
         self.config_parser.set('Analyzer', 'Single Freq', self.SingleFrequency)
         self.config_parser.set('Analyzer', 'Number Points', self.Freq_num_pts)
         
-    def load_config(self):
-        '''Reads the config file and sets the class attributes. '''
+    def load_config(self, config_path = self.config_path):
+        '''Reads the config file and sets the class attributes. You can pass in
+        a config file path or the default is the one in the config object,
+        config.config_path. '''
         
-        self.config_parser.read(self.config_path)
+        self.config_parser.read(config_path)
         
         # getfloat() raises an exception if the value is not a float
         # getint() and getboolean() also do this for their respective types
@@ -338,7 +340,7 @@ Y Origin = %(y_origin)s
         freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
 
     def load_data_files(self, type):
-        '''loads all data point files into a 2D array of either mag or phase data.The return has
+        '''loads data point files into a 2D array of either real or imaginary data.The return has
         columns of row data. Use reshape_1D_to_3D() to get back a numpy 3D array.'''
     
         if type == 'real':
@@ -388,12 +390,14 @@ Y Origin = %(y_origin)s
         np.savetxt(fullpath, data)    
 
     def save_real_and_inten_as_matlab(self, real_array, inten_array):
+        '''Given a np array of real data and another of intensity, write the np array into 
+        a .mat binary file for use in MATLAB. '''
         real_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_REAL.mat')
         sio.savemat(real_data_path, {'real_array':real_array})
         
         inten_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_INTEN.mat')
         sio.savemat(inten_data_path, {'inten_array':inten_array})
-                                  
+                               
 class PlotTools(object):
     def __init__(self, Config):
         self.config = Config 
@@ -429,6 +433,9 @@ class PlotTools(object):
         plt.close('all')
         
 
+        
+        
+        
 
 
 

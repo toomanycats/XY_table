@@ -92,7 +92,7 @@ class Connection(object):
           
         return x_port, y_port    
 
-class Motor(Connection):
+class Motor(Object):
     '''This is a collection of methods which control an Mdrive 23 step motor. '''
     
     def __init__(self, serial_con):
