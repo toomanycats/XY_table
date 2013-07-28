@@ -122,11 +122,12 @@ class ConfigureDataSet(object):
         self.config_parser.set('Analyzer', 'Single Freq', self.SingleFrequency)
         self.config_parser.set('Analyzer', 'Number Points', self.Freq_num_pts)
         
-    def load_config(self, config_path = self.config_path):
+    def load_config(self, config_path = None):
         '''Reads the config file and sets the class attributes. You can pass in
         a config file path or the default is the one in the config object,
         config.config_path. '''
         
+        config_path = self.config_path
         self.config_parser.read(config_path)
         
         # getfloat() raises an exception if the value is not a float
