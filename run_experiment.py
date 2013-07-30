@@ -82,12 +82,12 @@ def take_data(data_point, index_y, index_x):
 
 def _take_data():
     '''Sub routine of take_data() that deals with the single or sweep mode. '''
-    if config.mode == 'sweep':
+    if config.Mode == 'sweep':
         data = vna.take_sweep_data()
-    elif config.mode == 'single':
+    elif config.Mode == 'single':
         data = vna.take_single_point_data(config.SingleFrequency)
     else:
-        raise Exception,"%s is not a valid mode. \n" %config.mode
+        raise Exception,"%s is not a valid mode. \n" %config.Mode
 
     return data
 
@@ -183,8 +183,8 @@ try:
 
 except ValueError:
     print """A value error was thrown. It is likely that the Freq_num_pts was 
-changed and does not match the values used in to create the variables "mag_array" and "phase_array" which 
-holds the data for the in-vivo plots."""
+changed and does not match the values used in to create the variables "real_array" and "imag_array" which 
+holds the data."""
     tb = traceback.format_exc()
     print tb
 except:
