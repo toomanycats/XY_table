@@ -21,7 +21,7 @@ class ConfigureDataSet(object):
         self.DirectoryRoot = '/media/Data'
         self.ExperimentDir = ''
         self.FileNamePrefix = ''
-        self.mode = ''
+        self.Mode = ''
         self.SingleFrequency = 0
         self.FreqStart = 0
         self.FreqStop = 0
@@ -65,19 +65,19 @@ class ConfigureDataSet(object):
     def get_config_from_user(self): 
         '''Have the user fill out config values interactively. ''' 
         
-        self.mode = raw_input("Enter the mode 'sweep' or 'single':")
+        self.Mode = raw_input("Enter the mode 'sweep' or 'single':")
         self.ExperimentDir = raw_input("Enter the name of the directory to hold this experiment: ")
         self.FileNamePrefix = raw_input("ENter the prefix for the files that will be saved: ")
         
-        if self.mode == 'sweep':
+        if self.Mode == 'sweep':
             self.FreqStart = float(raw_input("Enter the start freq of the sweep i.e., 3e9 or 10e9: "))
             self.FreqStop = float(raw_input("Enter the stop freq: "))
-        elif self.mode == 'single':
+        elif self.Mode == 'single':
              self.SingleFrequency = float(raw_input("Enter the single freq, i.e., 12e9: ")) # single freq mode
         else:
             raise Exception, "Not a valid choice, 'sweep' or 'single' only."
             
-        if self.mode == 'single':
+        if self.Mode == 'single':
             self.Freq_num_pts = 1
         else:
             self.Freq_num_pts = int(raw_input("Enter the number of points that the analyzer is set to take: "))
@@ -94,13 +94,20 @@ class ConfigureDataSet(object):
         self.set_xy_num_pts()
         self.make_sub_dirs()
         self.set_misc_paths()
-
-    def add_entries(self):
+ 
+        #add these var to the config parser
+        self._add_entries()
+  
+    def _add_entries(self):
         self.config_parser.add_section('Paths')
         self.config_parser.set('Paths', 'DirectoryRoot', self.DirectoryRoot)
         self.config_parser.set('Paths', 'ExperimentDir', self.ExperimentDir)
         self.config_parser.set('Paths', 'FilenamePrefix', self.FileNamePrefix)
-
+        self.config_parser.set('Paths','Config Path', self.config_path)
+        self.config_parser.set('Paths','Log Path', self.log_file)
+        self.config_parser.set('Paths','Real Point Dir', self.real_point_dir)
+        self.config_parser.set('Paths','Imag Point Dir', self.imag_point_dir)
+        
         self.config_parser.add_section('User')
         self.config_parser.set('User','User',self.Username)
         
@@ -116,7 +123,7 @@ class ConfigureDataSet(object):
         
         self.config_parser.add_section('Analyzer')
         self.config_parser.set('Analyzer', 'Test Set', self.TestSet)
-        self.config_parser.set('Analyzer', 'Mode', self.mode)
+        self.config_parser.set('Analyzer', 'Mode', self.Mode)
         self.config_parser.set('Analyzer', 'Start Freq', self.FreqStart)
         self.config_parser.set('Analyzer', 'Stop Freq', self.FreqStop)
         self.config_parser.set('Analyzer', 'Single Freq', self.SingleFrequency)
@@ -126,34 +133,36 @@ class ConfigureDataSet(object):
         '''Reads the config file and sets the class attributes. You can pass in
         a config file path or the default is the one in the config object,
         config.config_path. '''
-        
+        #ascii cfg file can't read back other types, str must be caste
         if config_path is None:
             config_path = self.config_path
         
         self.config_parser.read(config_path)
         
-        # getfloat() raises an exception if the value is not a float
-        # getint() and getboolean() also do this for their respective types
         self.DirectoryRoot = self.config_parser.get('Paths', 'DirectoryRoot')
         self.ExperimentDir = self.config_parser.get('Paths', 'ExperimentDir')
         self.FileNamePrefix = self.config_parser.get('Paths', 'FilenamePrefix')
+        self.config_path = self.config_parser.get('Paths','Config Path')
+        self.log_file = self.config_parser.get('Paths','Log Path')
+        self.real_point_dir = self.config_parser.get('Paths','Real Point Dir')
+        self.imag_point_dir = self.config_parser.get('Paths','Imag Point Dir')
         
         self.Username = self.config_parser.get('User','User')
         
         self.Date = self.config_parser.get('Date', 'Date')
 
-        self.X_length = self.config_parser.get('Sample', 'X length')
-        self.Y_length = self.config_parser.get('Sample', 'Y length')
-        self.Y_res = self.config_parser.get('Sample', 'Y res')
-        self.X_origin = self.config_parser.get('Sample', 'X origin')
-        self.Y_origin = self.config_parser.get('Sample', 'Y origin')
+        self.X_length = float(self.config_parser.get('Sample', 'X length'))
+        self.Y_length = float(self.config_parser.get('Sample', 'Y length'))
+        self.Y_res = float(self.config_parser.get('Sample', 'Y res'))
+        self.X_origin = float(self.config_parser.get('Sample', 'X origin'))
+        self.Y_origin = float(self.config_parser.get('Sample', 'Y origin'))
         
         self.TestSet = self.config_parser.get('Analyzer', 'Test Set')
         self.Mode = self.config_parser.get('Analyzer', 'Mode')
-        self.FreqStart = self.config_parser.get('Analyzer', 'Start Freq')
-        self.FreqStop = self.config_parser.get('Analyzer', 'Stop Freq')
-        self.SingleFrequency = self.config_parser.get('Analyzer', 'Single Freq')
-        self.Freq_num_pts = self.config_parser.get('Analyzer', 'Number Points')   
+        self.FreqStart = float(self.config_parser.get('Analyzer', 'Start Freq'))
+        self.FreqStop = float(self.config_parser.get('Analyzer', 'Stop Freq'))
+        self.SingleFrequency = float(self.config_parser.get('Analyzer', 'Single Freq'))
+        self.Freq_num_pts = float(self.config_parser.get('Analyzer', 'Number Points'))   
   
     def write_config_file(self):
         with open(self.config_path, 'w') as configfile:
@@ -339,12 +348,20 @@ Y Origin = %(y_origin)s
         return phase_data
    
     def get_freq_vector(self, config = None):
-        if config is None:# allows for stand alone program to call this method
-            config = self.config
+        try:
+            if config is None:# allows for stand alone program to call this method
+                config = self.config
+                
+            Deltafreq = (self.config.FreqStop - self.config.FreqStart) / float(self.config.Freq_num_pts)
+            freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
             
-        Deltafreq = (self.config.FreqStop - self.config.FreqStart) / float(self.config.Freq_num_pts)
-        freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
+            return freq_vec
 
+        except ZeroDivisionError:
+            print """Divide by zero error. Delta Freq is 0, likely b/c the experiment your working with is
+is the single point type. Check the configuration file located in the experiment root directory (.cfg) """
+            raise ZeroDivisionError
+            
     def load_data_files(self, type):
         '''loads data point files into a 2D array of either real or imaginary data.The return has
         columns of row data. Use reshape_1D_to_3D() to get back a numpy 3D array.'''
@@ -407,7 +424,10 @@ Y Origin = %(y_origin)s
         comp_data.real = real_array
         comp_data.imag = imag_array
 
-        freq_data = self.get_freq_vector()
+        if real_array.ndim == 3:
+            freq_data = self.get_freq_vector()
+        else:
+            freq_data = 0#TODO: work around for now
         
         data = np.zeros((real_array.shape),dtype=complex)
         data.real = real_array

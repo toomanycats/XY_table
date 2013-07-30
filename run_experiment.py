@@ -163,7 +163,6 @@ try:
     confirm_origin()
 
     # Write the config to file.
-    config.add_entries() # origin could have changed
     config.write_config_file()
     
     # Where the work is done on the sample
