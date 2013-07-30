@@ -68,18 +68,12 @@ def take_data(data_point, index_y, index_x):
     data = _take_data()
 
     real_data = arraytools.get_real(data)
->>>>>>>>>>>>>>>>>>>> File 1
->>>>>>>>>>>>>>>>>>>> File 2
-    # send to mag_array for in-vivo plotting
->>>>>>>>>>>>>>>>>>>> File 3
-<<<<<<<<<<<<<<<<<<<<
+
+    # send to array for in-vivo plotting
     real_array[:,index_y, index_x] = real_data
->>>>>>>>>>>>>>>>>>>> File 1
->>>>>>>>>>>>>>>>>>>> File 2
+
     # save the mag data from a single point to it's own file
         # in the Single_Point dir
->>>>>>>>>>>>>>>>>>>> File 3
-<<<<<<<<<<<<<<<<<<<<
     arraytools.save_data_to_file(data_point, real_data, 'real')
    
     imag_data = arraytools.get_imag(data)
@@ -115,12 +109,10 @@ def set_sample_origin():
         print "Moving sample to roughly center.\n"    
         mx.move_absolute(0.20)
         my.move_absolute(0.20)
->>>>>>>>>>>>>>>>>>>> File 1
->>>>>>>>>>>>>>>>>>>> File 2
+
         config.X_origin = mx.CurrentPos
         config.Y_origin = my.CurrentPos
->>>>>>>>>>>>>>>>>>>> File 3
-<<<<<<<<<<<<<<<<<<<<
+
     else:
         print "You did not enter a 'y' or a 'n'."
         set_sample_origin()
@@ -163,13 +155,9 @@ try:
     
     # make an array to hold the data for plotting , vivo testing and .mat save
     arraytools = code_tools.ArrayTools(config)
->>>>>>>>>>>>>>>>>>>> File 1
->>>>>>>>>>>>>>>>>>>> File 2
     arraytools.save_readme()
     
     # make an array to hold the data for plotting or in vivo testing
->>>>>>>>>>>>>>>>>>>> File 3
-<<<<<<<<<<<<<<<<<<<<
     real_array =   arraytools.make_3d_array()
     imag_array = arraytools.make_3d_array()
     inten_array = arraytools.make_3d_array()# for plotting
