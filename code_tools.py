@@ -379,6 +379,10 @@ is the single point type. Check the configuration file located in the experiment
             raise Exception, "Type was not a valid choice of 'real' or 'imag'. "    
 
         num_files = self.config.Num_x_pts * self.config.Num_y_pts
+        
+        if num_files == 0:
+            raise exception, "The number of files was calculated as zero."
+        
         data = np.zeros((self.config.Freq_num_pts, num_files))
 
         for file_num in xrange(0, num_files):
@@ -441,14 +445,12 @@ is the single point type. Check the configuration file located in the experiment
 
         phase_data = self.get_phase(data)
 
-        Out_Data = {'freq':freq_data,
-                    'complex':comp_data,
-                    'intensity':inten_data,
-                    'phase':phase_data}
-#         Out_Data[0]['freq'] = freq_data
-#         Out_Data[1]['complex'] = comp_data
-#         Out_Data[2]['inten'] = inten_data
-#         Out_Data[3]['phase'] = phase_data
+        Out_Data = np.zeros((4,), dtype = np.object)
+        temp = [ freq_data, comp_data, inten_data, phase_data ]
+        Out_Data[0] = temp[0]
+        Out_Data[1] = temp[1]
+        Out_Data[2] = temp[2]
+        Out_Data[3] = temp[3]
       
         sio.savemat(mat_data_path, {'Out_Data':Out_Data})        
                            
