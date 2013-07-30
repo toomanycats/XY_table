@@ -42,8 +42,8 @@ class ConfigureDataSet(object):
         self.imag_point_dir = ''
         
     def set_misc_paths(self):
-        self.config_path = path.join(self.DirectoryRoot,self.ExperimentDir)
-        self.log_file = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix+'_LOG.log')
+        self.config_path = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.cfg' )
+        self.log_file = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.log')
         
     def make_sub_dirs(self):
         p = path.join(self.DirectoryRoot,self.ExperimentDir)
@@ -339,10 +339,10 @@ Y Origin = %(y_origin)s
         return phase_data
    
     def get_freq_vector(self, config = None):
-        if config is None:
+        if config is None:# allows for stand alone program to call this method
             config = self.config
             
-        Deltafreq = (self.config.freqstop - self.config.freqstart) / float(self.config.Freq_num_pts)
+        Deltafreq = (self.config.FreqStop - self.config.FreqStart) / float(self.config.Freq_num_pts)
         freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
 
     def load_data_files(self, type):
@@ -395,15 +395,35 @@ Y Origin = %(y_origin)s
 
         np.savetxt(fullpath, data)    
 
-    def save_real_and_inten_as_matlab(self, real_array, inten_array):
-        '''Given a np array of real data and another of intensity, write the np array into 
-        a .mat binary file for use in MATLAB. '''
-        real_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_REAL.mat')
-        sio.savemat(real_data_path, {'real_array':real_array})
+    def save_data_as_matlab(self, real_array, imag_array):
+        '''Given a np array of real data and another of imaginary data, write the np array into 
+        a complex matrix .mat binary file for use in MATLAB. '''
+        if real_array.shape != imag_array.shape:     
+            raise Exception, "Real array and Imaginary array do not have the same shape."
         
-        inten_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_INTEN.mat')
-        sio.savemat(inten_data_path, {'inten_array':inten_array})
-                               
+        mat_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '.mat')
+
+        comp_data = np.zeros((real_array.shape), dtype=complex)
+        comp_data.real = real_array
+        comp_data.imag = imag_array
+
+        freq_data = self.get_freq_vector()
+        
+        data = np.zeros((real_array.shape),dtype=complex)
+        data.real = real_array
+        data.imag = imag_array
+        inten_data = self.get_intensity(data) 
+
+        phase_data = self.get_phase(data)
+
+        Out_Data = np.zeros((4,) , dtype = dt)
+        Out_Data[0]['freq'] = freq_data
+        Out_Data[1]['complex'] = comp_data
+        Out_Data[2]['inten'] = inten_data
+        Out_Data[3]['phase'] = phase_data
+      
+        sio.savemat(mat_data_path, {'Out_Data':Out_Data})        
+                           
 class PlotTools(object):
     def __init__(self, Config):
         self.config = Config 

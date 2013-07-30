@@ -10,18 +10,32 @@ import matplotlib.pyplot as plt
 from IPython import Shell
 import scipy.io as sio
 
+def prompt_for_return_home():
+    return_home = raw_input("""Do you want the motors to reference the home location ?
+You should enter 'yes', if this is your first experimental run. If you are repeating an experiment then you likely
+do not need to re-reference the home location (no). : """)
+    if return_home == 'yes':
+        # return motors to home limit switches
+        mx.return_home()
+        my.return_home()
+    elif return_home == 'no':
+        return
+    else:
+        print "You did not enter 'yes' or 'no' ."
+        return_home()
+
 def confirm_origin():
-    bool = raw_input("Do you want to use your current/new position as the origin, or the one previously set? (y/n): ")
-    if bool == 'y':
+    bool = raw_input("Do you want to use your current/new position as the origin, or the one previously set? (current/previous): ")
+    if bool == 'current':
         print "Setting current position as sample origin. \n"
         config.X_origin = mx.CurrentPos
         config.Y_origin = my.CurrentPos
-    elif bool == 'n':
+    elif bool == 'previous':
         print "Moving sample back to previously defined origin. \n"
         mx.move_absolute(config.X_origin)
         my.move_absolute(config.Y_origin) 
     else:
-        print "Enter 'y' or 'n'. "
+        print "Enter 'current' or 'previous'. "
         confirm_origin()       
 
 def open_interactive():
@@ -121,19 +135,20 @@ try:
     mx.main(acceleration = 51200, max_vel = 100000, init_vel = 100)
     my.main(acceleration = 51200, max_vel = 100000, init_vel = 100)
 
-    # return motors to home limit switches
-    mx.return_home()
-    my.return_home()
+    # might not need to return home for a reference
+    prompt_for_return_home()
+    
+    # enter the current position into the config object        
     set_sample_origin()
 
     ## analyzer instance
-    vna = vna_tools.VnaTools(analyzer_name = "VNA", config.log_file)
+    vna = vna_tools.VnaTools(analyzer_name = "VNA", log_file = config.log_file)
     
     # make an array to hold the data for plotting , vivo testing and .mat save
     arraytools = code_tools.ArrayTools(config)
     real_array =   arraytools.make_3d_array()
     imag_array = arraytools.make_3d_array()
-    inten_array = arraytools.make_3d_array()
+    inten_array = arraytools.make_3d_array()# for plotting
 
     # plotting 
     plottools = code_tools.PlotTools(config)
@@ -160,7 +175,7 @@ try:
     my.move_absolute(config.Y_origin)
     
     #save the numpy arrays as matlab .mat files for easy in house analysis.
-    arraytools.save_real_and_inten_as_matlab(real_array, inten_array)
+    arraytools.save_data_as_matlab(real_array, imag_array)
 
     # close all devices and free ports.
     mx.close()
