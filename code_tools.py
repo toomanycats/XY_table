@@ -9,15 +9,19 @@ from os import path,makedirs
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.io as sio
+import ConfigParser
+
 
 class ConfigureDataSet(object):
     def __init__(self):
+        self.config_parser = ConfigParser.RawConfigParser()
+        
         self.Username = getuser() 
         self.Date = datetime.datetime.now()   
         self.DirectoryRoot = '/media/Data'
         self.ExperimentDir = ''
         self.FileNamePrefix = ''
-        self.mode = ''
+        self.Mode = ''
         self.SingleFrequency = 0
         self.FreqStart = 0
         self.FreqStop = 0
@@ -36,6 +40,10 @@ class ConfigureDataSet(object):
         self.y_port = ''
         self.real_point_dir = ''
         self.imag_point_dir = ''
+        
+    def set_misc_paths(self):
+        self.config_path = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.cfg' )
+        self.log_file = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.log')
         
     def make_sub_dirs(self):
         p = path.join(self.DirectoryRoot,self.ExperimentDir)
@@ -57,19 +65,19 @@ class ConfigureDataSet(object):
     def get_config_from_user(self): 
         '''Have the user fill out config values interactively. ''' 
         
-        self.mode = raw_input("Enter the mode 'sweep' or 'single':")
-        self.ExperimentDir = raw_input("Enter the name of the directotry to hold this experiment: ")
+        self.Mode = raw_input("Enter the mode 'sweep' or 'single':")
+        self.ExperimentDir = raw_input("Enter the name of the directory to hold this experiment: ")
         self.FileNamePrefix = raw_input("ENter the prefix for the files that will be saved: ")
         
-        if self.mode == 'sweep':
+        if self.Mode == 'sweep':
             self.FreqStart = float(raw_input("Enter the start freq of the sweep i.e., 3e9 or 10e9: "))
             self.FreqStop = float(raw_input("Enter the stop freq: "))
-        elif self.mode == 'single':
+        elif self.Mode == 'single':
              self.SingleFrequency = float(raw_input("Enter the single freq, i.e., 12e9: ")) # single freq mode
         else:
             raise Exception, "Not a valid choice, 'sweep' or 'single' only."
             
-        if self.mode == 'single':
+        if self.Mode == 'single':
             self.Freq_num_pts = 1
         else:
             self.Freq_num_pts = int(raw_input("Enter the number of points that the analyzer is set to take: "))
@@ -85,6 +93,85 @@ class ConfigureDataSet(object):
         self.TestSet = 'S21' # transmission always for this experiment
         self.set_xy_num_pts()
         self.make_sub_dirs()
+        self.set_misc_paths()
+ 
+        #add these var to the config parser
+        self._add_entries()
+  
+    def _add_entries(self):
+        self.config_parser.add_section('Paths')
+        self.config_parser.set('Paths', 'DirectoryRoot', self.DirectoryRoot)
+        self.config_parser.set('Paths', 'ExperimentDir', self.ExperimentDir)
+        self.config_parser.set('Paths', 'FilenamePrefix', self.FileNamePrefix)
+        self.config_parser.set('Paths','Config Path', self.config_path)
+        self.config_parser.set('Paths','Log Path', self.log_file)
+        self.config_parser.set('Paths','Real Point Dir', self.real_point_dir)
+        self.config_parser.set('Paths','Imag Point Dir', self.imag_point_dir)
+        
+        self.config_parser.add_section('User')
+        self.config_parser.set('User','User',self.Username)
+        
+        self.config_parser.add_section('Date')
+        self.config_parser.set('Date', 'Date', self.Date)
+
+        self.config_parser.add_section('Sample')
+        self.config_parser.set('Sample', 'X length', self.X_length)
+        self.config_parser.set('Sample', 'Y length', self.Y_length)
+        self.config_parser.set('Sample', 'X res', self.X_res)
+        self.config_parser.set('Sample', 'Y res', self.Y_res)
+        self.config_parser.set('Sample', 'X origin', self.X_origin)
+        self.config_parser.set('Sample', 'Y origin', self.Y_origin)
+        
+        self.config_parser.add_section('Analyzer')
+        self.config_parser.set('Analyzer', 'Test Set', self.TestSet)
+        self.config_parser.set('Analyzer', 'Mode', self.Mode)
+        self.config_parser.set('Analyzer', 'Start Freq', self.FreqStart)
+        self.config_parser.set('Analyzer', 'Stop Freq', self.FreqStop)
+        self.config_parser.set('Analyzer', 'Single Freq', self.SingleFrequency)
+        self.config_parser.set('Analyzer', 'Number Points', self.Freq_num_pts)
+        
+    def load_config(self, config_path = None):
+        '''Reads the config file and sets the class attributes. You can pass in
+        a config file path or the default is the one in the config object,
+        config.config_path. '''
+        #ascii cfg file can't read back other types, str must be caste
+        if config_path is None:
+            config_path = self.config_path
+        
+        self.config_parser.read(config_path)
+        
+        self.DirectoryRoot = self.config_parser.get('Paths', 'DirectoryRoot')
+        self.ExperimentDir = self.config_parser.get('Paths', 'ExperimentDir')
+        self.FileNamePrefix = self.config_parser.get('Paths', 'FilenamePrefix')
+        self.config_path = self.config_parser.get('Paths','Config Path')
+        self.log_file = self.config_parser.get('Paths','Log Path')
+        self.real_point_dir = self.config_parser.get('Paths','Real Point Dir')
+        self.imag_point_dir = self.config_parser.get('Paths','Imag Point Dir')
+        
+        self.Username = self.config_parser.get('User','User')
+        
+        self.Date = self.config_parser.get('Date', 'Date')
+
+        self.X_length = float(self.config_parser.get('Sample', 'X length'))
+        self.Y_length = float(self.config_parser.get('Sample', 'Y length'))
+        self.X_res = float(self.config_parser.get('Sample', 'X res'))
+        self.Y_res = float(self.config_parser.get('Sample', 'Y res'))
+        self.X_origin = float(self.config_parser.get('Sample', 'X origin'))
+        self.Y_origin = float(self.config_parser.get('Sample', 'Y origin'))
+        
+        self.TestSet = self.config_parser.get('Analyzer', 'Test Set')
+        self.Mode = self.config_parser.get('Analyzer', 'Mode')
+        self.FreqStart = float(self.config_parser.get('Analyzer', 'Start Freq'))
+        self.FreqStop = float(self.config_parser.get('Analyzer', 'Stop Freq'))
+        self.SingleFrequency = float(self.config_parser.get('Analyzer', 'Single Freq'))
+        self.Freq_num_pts = float(self.config_parser.get('Analyzer', 'Number Points'))   
+   
+        # must be set after the load just like the UI version 
+        self.set_xy_num_pts()
+  
+    def write_config(self):
+        with open(self.config_path, 'w') as configfile:
+            self.config_parser.write(configfile)
 
 class CodeTools(object):
     '''Contains methods used for the combination of motor tools and vna tools '''    
@@ -265,12 +352,23 @@ Y Origin = %(y_origin)s
 
         return phase_data
    
-    def make_freq_vector(self):
-        Deltafreq = (self.config.freqstop - self.config.freqstart) / float(self.config.Freq_num_pts)
-        freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
+    def get_freq_vector(self, config = None):
+        try:
+            if config is None:# allows for stand alone program to call this method
+                config = self.config
+                
+            Deltafreq = (self.config.FreqStop - self.config.FreqStart) / float(self.config.Freq_num_pts)
+            freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
+            
+            return freq_vec
 
+        except ZeroDivisionError:
+            print """Divide by zero error. Delta Freq is 0, likely b/c the experiment your working with is
+is the single point type. Check the configuration file located in the experiment root directory (.cfg) """
+            raise ZeroDivisionError
+            
     def load_data_files(self, type):
-        '''loads all data point files into a 2D array of either mag or phase data.The return has
+        '''loads data point files into a 2D array of either real or imaginary data.The return has
         columns of row data. Use reshape_1D_to_3D() to get back a numpy 3D array.'''
     
         if type == 'real':
@@ -281,6 +379,10 @@ Y Origin = %(y_origin)s
             raise Exception, "Type was not a valid choice of 'real' or 'imag'. "    
 
         num_files = self.config.Num_x_pts * self.config.Num_y_pts
+        
+        if num_files == 0:
+            raise exception, "The number of files was calculated as zero."
+        
         data = np.zeros((self.config.Freq_num_pts, num_files))
 
         for file_num in xrange(0, num_files):
@@ -319,13 +421,39 @@ Y Origin = %(y_origin)s
 
         np.savetxt(fullpath, data)    
 
-    def save_real_and_inten_as_matlab(self, real_array, inten_array):
-        real_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_REAL.mat')
-        sio.savemat(real_data_path, {'real_array':real_array})
+    def save_data_as_matlab(self, real_array, imag_array):
+        '''Given a np array of real data and another of imaginary data, write the np array into 
+        a complex matrix .mat binary file for use in MATLAB. '''
+        if real_array.shape != imag_array.shape:     
+            raise Exception, "Real array and Imaginary array do not have the same shape."
         
-        inten_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_INTEN.mat')
-        sio.savemat(inten_data_path, {'inten_array':inten_array})
-                                  
+        mat_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '.mat')
+
+        comp_data = np.zeros((real_array.shape), dtype=complex)
+        comp_data.real = real_array
+        comp_data.imag = imag_array
+
+        if real_array.ndim == 3:
+            freq_data = self.get_freq_vector()
+        else:
+            freq_data = self.config.SingleFrequency
+        
+        data = np.zeros((real_array.shape),dtype=complex)
+        data.real = real_array
+        data.imag = imag_array
+        inten_data = self.get_intensity(data) 
+
+        phase_data = self.get_phase(data)
+
+        Out_Data = np.zeros((4,), dtype = np.object)
+        temp = [ freq_data, comp_data, inten_data, phase_data ]
+        Out_Data[0] = temp[0]
+        Out_Data[1] = temp[1]
+        Out_Data[2] = temp[2]
+        Out_Data[3] = temp[3]
+      
+        sio.savemat(mat_data_path, {'Out_Data':Out_Data})        
+                           
 class PlotTools(object):
     def __init__(self, Config):
         self.config = Config 
@@ -338,8 +466,7 @@ class PlotTools(object):
  
         im2 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
         plt.colorbar(im2)  
-          
-               
+                      
     def plot(self, real, intensity, z=0):
         '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
         xy plane you want to plot. For single point mode, z = 0 (default), for sweep you must choose. '''
@@ -362,6 +489,9 @@ class PlotTools(object):
         plt.close('all')
         
 
+        
+        
+        
 
 
 

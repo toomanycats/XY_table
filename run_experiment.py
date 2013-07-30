@@ -10,6 +10,34 @@ import matplotlib.pyplot as plt
 from IPython import Shell
 import scipy.io as sio
 
+def prompt_for_return_home():
+    return_home = raw_input("""Do you want the motors to reference the home location ?
+You should enter 'yes', if this is your first experimental run. If you are repeating an experiment then you likely
+do not need to re-reference the home location (no). : """)
+    if return_home == 'yes':
+        # return motors to home limit switches
+        mx.return_home()
+        my.return_home()
+    elif return_home == 'no':
+        return
+    else:
+        print "You did not enter 'yes' or 'no' ."
+        return_home()
+
+def confirm_origin():
+    bool = raw_input("Do you want to use your current/new position as the origin, or the one previously set? (current/previous): ")
+    if bool == 'current':
+        print "Setting current position as sample origin. \n"
+        config.X_origin = mx.CurrentPos
+        config.Y_origin = my.CurrentPos
+    elif bool == 'previous':
+        print "Moving sample back to previously defined origin. \n"
+        mx.move_absolute(config.X_origin)
+        my.move_absolute(config.Y_origin) 
+    else:
+        print "Enter 'current' or 'previous'. "
+        confirm_origin()       
+
 def open_interactive():
     '''Opens an interactive interpreter that has access to the local variables. Exit with "exit()" '''
     ipshell = Shell.IPShellEmbed()
@@ -40,7 +68,18 @@ def take_data(data_point, index_y, index_x):
     data = _take_data()
 
     real_data = arraytools.get_real(data)
+>>>>>>>>>>>>>>>>>>>> File 1
+>>>>>>>>>>>>>>>>>>>> File 2
+    # send to mag_array for in-vivo plotting
+>>>>>>>>>>>>>>>>>>>> File 3
+<<<<<<<<<<<<<<<<<<<<
     real_array[:,index_y, index_x] = real_data
+>>>>>>>>>>>>>>>>>>>> File 1
+>>>>>>>>>>>>>>>>>>>> File 2
+    # save the mag data from a single point to it's own file
+        # in the Single_Point dir
+>>>>>>>>>>>>>>>>>>>> File 3
+<<<<<<<<<<<<<<<<<<<<
     arraytools.save_data_to_file(data_point, real_data, 'real')
    
     imag_data = arraytools.get_imag(data)
@@ -54,12 +93,12 @@ def take_data(data_point, index_y, index_x):
 
 def _take_data():
     '''Sub routine of take_data() that deals with the single or sweep mode. '''
-    if config.mode == 'sweep':
+    if config.Mode == 'sweep':
         data = vna.take_sweep_data()
-    elif config.mode == 'single':
+    elif config.Mode == 'single':
         data = vna.take_single_point_data(config.SingleFrequency)
     else:
-        raise Exception,"%s is not a valid mode. \n" %config.mode
+        raise Exception,"%s is not a valid mode. \n" %config.Mode
 
     return data
 
@@ -76,6 +115,12 @@ def set_sample_origin():
         print "Moving sample to roughly center.\n"    
         mx.move_absolute(0.20)
         my.move_absolute(0.20)
+>>>>>>>>>>>>>>>>>>>> File 1
+>>>>>>>>>>>>>>>>>>>> File 2
+        config.X_origin = mx.CurrentPos
+        config.Y_origin = my.CurrentPos
+>>>>>>>>>>>>>>>>>>>> File 3
+<<<<<<<<<<<<<<<<<<<<
     else:
         print "You did not enter a 'y' or a 'n'."
         set_sample_origin()
@@ -106,19 +151,29 @@ try:
     mx,my = motor_tools.Connection().connect_to_ports()
     mx.main(acceleration = 51200, max_vel = 100000, init_vel = 100)
     my.main(acceleration = 51200, max_vel = 100000, init_vel = 100)
-    # return motors to home limit switches
-    mx.return_home()
-    my.return_home()
+
+    # might not need to return home for a reference
+    prompt_for_return_home()
+    
+    # enter the current position into the config object        
     set_sample_origin()
 
     ## analyzer instance
-    vna = vna_tools.VnaTools(analyzer_name = "VNA")# should open a connection on channel 16.
+    vna = vna_tools.VnaTools(analyzer_name = "VNA", log_file = config.log_file)
+    
+    # make an array to hold the data for plotting , vivo testing and .mat save
+    arraytools = code_tools.ArrayTools(config)
+>>>>>>>>>>>>>>>>>>>> File 1
+>>>>>>>>>>>>>>>>>>>> File 2
+    arraytools.save_readme()
     
     # make an array to hold the data for plotting or in vivo testing
-    arraytools = code_tools.ArrayTools(config)
+>>>>>>>>>>>>>>>>>>>> File 3
+<<<<<<<<<<<<<<<<<<<<
     real_array =   arraytools.make_3d_array()
     imag_array = arraytools.make_3d_array()
-    inten_array = arraytools.make_3d_array()
+    inten_array = arraytools.make_3d_array()# for plotting
+
     # plotting 
     plottools = code_tools.PlotTools(config)
     
@@ -128,22 +183,22 @@ try:
         ipshell = open_interactive()
         ipshell()
     
-    # reset the origin if 
-    config.X_origin = mx.CurrentPos
-    config.Y_origin = my.CurrentPos
-    
-    # save the readme file to the directory
-    arraytools.save_readme()
+    # origin could have changed during interactive setting
+    confirm_origin()
+
+    # Write the config to file.
+    config.write_config()
     
     # Where the work is done on the sample
     loop_along_sample(direction = -1)
+
     # done collecting data from a sample.
     print "returning to origin \n"
     mx.move_absolute(config.X_origin)
     my.move_absolute(config.Y_origin)
     
-    #save the numpy arrays as matlab .mat files for easy analysis.
-    arraytools.save_real_and_inten_as_matlab(real_array, inten_array)
+    #save the numpy arrays as matlab .mat files for easy in house analysis.
+    arraytools.save_data_as_matlab(real_array, imag_array)
 
     # close all devices and free ports.
     mx.close()
@@ -152,8 +207,8 @@ try:
 
 except ValueError:
     print """A value error was thrown. It is likely that the Freq_num_pts was 
-changed and does not match the values used in to create the variables "mag_array" and "phase_array" which 
-holds the data for the in-vivo plots."""
+changed and does not match the values used in to create the variables "real_array" and "imag_array" which 
+holds the data."""
     tb = traceback.format_exc()
     print tb
 except:

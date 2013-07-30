@@ -9,6 +9,7 @@ class Connection(object):
     def __init__(self):
         self.con1 = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.con2 = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
+        self.connection_attempts = 0
         
     def _get_sn(self, con):
         '''Query the motor for it's serial number. '''
@@ -52,15 +53,18 @@ class Connection(object):
                 print "%s is not a connected port, trying next.\n" %port
 
         if x_port_flag is False or y_port_flag is False:
-            print "Connection failed waiting and trying again.\n"
+            print "Connection failed waiting 5 seconds and trying again.\n"
             try:
                 self.con1.close()
                 self.con2.close()
             except:
-                pass    
-            sleep(2)
-            self.connect_to_ports()
-            #raise Exception, "The x or y motor has not been connected.\n"     
+                pass  
+            if self.connection_attempts < 4:  
+                sleep(5)
+                self.connection_attempts += 1
+                self.connect_to_ports()
+            else:    
+                raise Exception, "The x or y motor has not been connected, 4 attempts have been made.\n"     
 
     def _loop_structure(self, con, pat):
         '''A method used to complete all the queries in this class. The mdrive motor
@@ -88,7 +92,7 @@ class Connection(object):
           
         return x_port, y_port    
 
-class Motor(Connection):
+class Motor(object):
     '''This is a collection of methods which control an Mdrive 23 step motor. '''
     
     def __init__(self, serial_con):

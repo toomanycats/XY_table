@@ -3,11 +3,14 @@ import time
 import os
 import sys
 import numpy as np
+import logging
 
 class VnaTools(object):
     '''Library of methods to control an HP8510C Vector Network Analyzer. This module uses
     the ascii format for data transmission.'''
-    def __init__(self,analyzer_name): 
+    def __init__(self,analyzer_name, log_file): 
+        self._setup_logger(log_file)
+        #self.log = logging.basicConfig(filename=logfile,level=logging.DEBUG)
         self._open_con(analyzer_name)
         '''The SFSU analyzer must be set to channel 16, which is set in the gpib PCI card config.'''
 
@@ -185,6 +188,7 @@ it is not clear that this is truly the case. I know it's annoying... """
         print "Clearing error from VNA. \n"
         g.write(self.chan,"OUTPERRO")
         error_msg = g.read(self.chan,1000)
+        self.logger.debug(error_msg)
         print error_msg + '\n'
             
     def check_for_errors(self):
@@ -194,4 +198,13 @@ it is not clear that this is truly the case. I know it's annoying... """
         if stat_bytes[2] == '1':
             print "Error found in status byte, clearing now. \n"
             self._print_and_clear_error()        
+        
+    def _setup_logger(self, log_path):
+        self.logger = logging.getLogger('XY_table')
+        hdlr = logging.FileHandler(log_path)
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        hdlr.setFormatter(formatter)
+        self.logger.addHandler(hdlr) 
+        self.logger.setLevel(logging.DEBUG)        
+        
         
