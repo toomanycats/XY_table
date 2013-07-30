@@ -11,9 +11,9 @@ from IPython import Shell
 import scipy.io as sio
 
 def prompt_for_return_home():
-    return_home = raw_input("""Do you want the motors to reference the home location ?
+    return_home = raw_input("""\n**** Do you want the motors to reference the home location ? ****
 You should enter 'yes', if this is your first experimental run. If you are repeating an experiment then you likely
-do not need to re-reference the home location (no). : """)
+do not need to re-reference the home location (yes/no). : """)
     if return_home == 'yes':
         # return motors to home limit switches
         mx.return_home()
@@ -24,19 +24,9 @@ do not need to re-reference the home location (no). : """)
         print "You did not enter 'yes' or 'no' ."
         return_home()
 
-def confirm_origin():
-    bool = raw_input("Do you want to use your current/new position as the origin, or the one previously set? (current/previous): ")
-    if bool == 'current':
-        print "Setting current position as sample origin. \n"
-        config.X_origin = mx.CurrentPos
-        config.Y_origin = my.CurrentPos
-    elif bool == 'previous':
-        print "Moving sample back to previously defined origin. \n"
-        mx.move_absolute(config.X_origin)
-        my.move_absolute(config.Y_origin) 
-    else:
-        print "Enter 'current' or 'previous'. "
-        confirm_origin()       
+def set_origin():
+    config.X_origin = mx.CurrentPos
+    config.Y_origin = my.CurrentPos
 
 def open_interactive():
     '''Opens an interactive interpreter that has access to the local variables. Exit with "exit()" '''
@@ -91,27 +81,35 @@ def _take_data():
 
     return data
 
-def set_sample_origin():
-    '''The user can set the origin or center of the table will be used. '''
-    flag = raw_input("If you know the origin cordinates you'd like to use, enter 'y', or 'n':  (y/n): ")
-    if flag == 'y':
-        config.X_origin = float(raw_input("Enter the X origin of the sample: "))
-        config.Y_origin = float(raw_input("Enter the Y origin of the sample: "))
-        mx.move_absolute(config.X_origin)
-        my.move_absolute(config.Y_origin)
+def query_sample_origin():
+    '''The user can set the origin, use the center of the table, or the current position.'''
+    flag = raw_input("""\n Do you want to use the CENTER of the table, ENTER the coordinates, or use the CURRENT position
+as the sample origin ? (center/coord,current): """)
 
-    elif flag == 'n':
+    if flag == 'coord':
+        X = float(raw_input("Enter the X origin of the sample: "))
+        Y = float(raw_input("Enter the Y origin of the sample: "))
+        mx.move_absolute(X)
+        my.move_absolute(Y)
+        set_origin()
+
+    elif flag == 'center':
         print "Moving sample to roughly center.\n"    
         mx.move_absolute(0.20)
         my.move_absolute(0.20)
+        set_origin()
+    
+    elif flag == 'current':
+        set_origin()
+
     else:
-        print "You did not enter a 'y' or a 'n'."
-        set_sample_origin()
+        print "You did not enter 'center', 'coord' or 'current'."
+        query_sample_origin()
 
 def review_config_settings(config):
     '''Print the values stored in the config object and prompt for changes. '''
     print "Review the config you just made. \n"
-    for k,v in config.__dict__.iteritems():
+    for k,v in sorted(config.__dict__.iteritems()):
         print "%s ........ %s" %(str(k).rjust(15),str(v).rjust(15))
     cont = raw_input("Are these settings correct ? (y/n)")
     if cont == 'y':
@@ -139,7 +137,7 @@ try:
     prompt_for_return_home()
     
     # enter the current position into the config object        
-    set_sample_origin()
+    query_sample_origin()
 
     ## analyzer instance
     vna = vna_tools.VnaTools(analyzer_name = "VNA", log_file = config.log_file)
@@ -154,14 +152,13 @@ try:
     plottools = code_tools.PlotTools(config)
     
     ### go into interactive mode to jog the motors or do additional placement or handle the unforeseen 
-    interactive = raw_input("Do you want to drop into an interactive shell for manual control ?(y/n): ")
+    interactive = raw_input("Do you want to drop into an interactive shell ?(y/n): ")
+    print '\n'
     if interactive == 'y':
         ipshell = open_interactive()
         ipshell()
+        set_origin() #last check if the origin changed during the interactive session.
     
-    # origin could have changed during interactive setting
-    confirm_origin()
-
     # Write the config to file.
     config.write_config()
     
@@ -169,11 +166,12 @@ try:
     loop_along_sample(direction = -1)
 
     # done collecting data from a sample.
-    print "returning to origin \n"
+    print "\n *** returning to origin *** \n"
     mx.move_absolute(config.X_origin)
     my.move_absolute(config.Y_origin)
     
     #save the numpy arrays as matlab .mat files for easy in house analysis.
+    print "Saving the data array to disk.\n"
     arraytools.save_data_as_matlab(real_array, imag_array)
 
     # close all devices and free ports.

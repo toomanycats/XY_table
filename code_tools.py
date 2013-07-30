@@ -50,11 +50,11 @@ class ConfigureDataSet(object):
         if not path.exists(p):
             makedirs(p)
         
-        self.real_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Real')
+        self.real_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Data_Points','Real')
         if not path.exists(self.real_point_dir):
             makedirs(self.real_point_dir)
 
-        self.imag_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Single_Point','Imag')
+        self.imag_point_dir = path.join(self.DirectoryRoot,self.ExperimentDir,'Data_Points','Imag')
         if not path.exists(self.imag_point_dir):
             makedirs(self.imag_point_dir)  
         
