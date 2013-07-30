@@ -117,6 +117,7 @@ class ConfigureDataSet(object):
         self.config_parser.add_section('Sample')
         self.config_parser.set('Sample', 'X length', self.X_length)
         self.config_parser.set('Sample', 'Y length', self.Y_length)
+        self.config_parser.set('Sample', 'X res', self.X_res)
         self.config_parser.set('Sample', 'Y res', self.Y_res)
         self.config_parser.set('Sample', 'X origin', self.X_origin)
         self.config_parser.set('Sample', 'Y origin', self.Y_origin)
@@ -153,6 +154,7 @@ class ConfigureDataSet(object):
 
         self.X_length = float(self.config_parser.get('Sample', 'X length'))
         self.Y_length = float(self.config_parser.get('Sample', 'Y length'))
+        self.X_res = float(self.config_parser.get('Sample', 'X res'))
         self.Y_res = float(self.config_parser.get('Sample', 'Y res'))
         self.X_origin = float(self.config_parser.get('Sample', 'X origin'))
         self.Y_origin = float(self.config_parser.get('Sample', 'Y origin'))
@@ -163,8 +165,11 @@ class ConfigureDataSet(object):
         self.FreqStop = float(self.config_parser.get('Analyzer', 'Stop Freq'))
         self.SingleFrequency = float(self.config_parser.get('Analyzer', 'Single Freq'))
         self.Freq_num_pts = float(self.config_parser.get('Analyzer', 'Number Points'))   
+   
+        # must be set after the load just like the UI version 
+        self.set_xy_num_pts()
   
-    def write_config_file(self):
+    def write_config(self):
         with open(self.config_path, 'w') as configfile:
             self.config_parser.write(configfile)
 
@@ -427,7 +432,7 @@ is the single point type. Check the configuration file located in the experiment
         if real_array.ndim == 3:
             freq_data = self.get_freq_vector()
         else:
-            freq_data = 0#TODO: work around for now
+            freq_data = self.config.SingleFrequency
         
         data = np.zeros((real_array.shape),dtype=complex)
         data.real = real_array
@@ -436,11 +441,14 @@ is the single point type. Check the configuration file located in the experiment
 
         phase_data = self.get_phase(data)
 
-        Out_Data = np.zeros((4,) , dtype = dt)
-        Out_Data[0]['freq'] = freq_data
-        Out_Data[1]['complex'] = comp_data
-        Out_Data[2]['inten'] = inten_data
-        Out_Data[3]['phase'] = phase_data
+        Out_Data = {'freq':freq_data,
+                    'complex':comp_data,
+                    'intensity':inten_data,
+                    'phase':phase_data}
+#         Out_Data[0]['freq'] = freq_data
+#         Out_Data[1]['complex'] = comp_data
+#         Out_Data[2]['inten'] = inten_data
+#         Out_Data[3]['phase'] = phase_data
       
         sio.savemat(mat_data_path, {'Out_Data':Out_Data})        
                            

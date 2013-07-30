@@ -163,7 +163,7 @@ try:
     confirm_origin()
 
     # Write the config to file.
-    config.write_config_file()
+    config.write_config()
     
     # Where the work is done on the sample
     loop_along_sample(direction = -1)
