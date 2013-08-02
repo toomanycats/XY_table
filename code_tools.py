@@ -421,13 +421,16 @@ is the single point type. Check the configuration file located in the experiment
 
         np.savetxt(fullpath, data)    
 
-    def save_data_as_matlab(self, real_array, imag_array):
+    def save_data_as_matlab(self, real_array, imag_array, mat_data_path = None):
         '''Given a np array of real data and another of imaginary data, write the np array into 
-        a complex matrix .mat binary file for use in MATLAB. '''
+        a complex matrix .mat binary file for use in MATLAB. The out put path default is the experimental
+        root directory. You can send in an outpath arg for use in a stand alone program.  '''
+
         if real_array.shape != imag_array.shape:     
             raise Exception, "Real array and Imaginary array do not have the same shape."
         
-        mat_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '.mat')
+        if mat_data_path is None:
+            mat_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '.mat')
 
         comp_data = np.zeros((real_array.shape), dtype=complex)
         comp_data.real = real_array
