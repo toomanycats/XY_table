@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.io as sio
 import ConfigParser
-
+from time import sleep
 
 class ConfigureDataSet(object):
     def __init__(self):
@@ -44,7 +44,8 @@ class ConfigureDataSet(object):
     def set_misc_paths(self):
         self.config_path = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.cfg' )
         self.log_file = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.log')
-        
+        self.mat_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '.mat')
+
     def make_sub_dirs(self):
         p = path.join(self.DirectoryRoot,self.ExperimentDir)
         if not path.exists(p):
@@ -430,8 +431,8 @@ is the single point type. Check the configuration file located in the experiment
             raise Exception, "Real array and Imaginary array do not have the same shape."
         
         if mat_data_path is None:
-            mat_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '.mat')
-
+            mat_data_path = self.config.mat_data_path
+            
         comp_data = np.zeros((real_array.shape), dtype=complex)
         comp_data.real = real_array
         comp_data.imag = imag_array
@@ -456,19 +457,43 @@ is the single point type. Check the configuration file located in the experiment
         Out_Data[3] = temp[3]
       
         sio.savemat(mat_data_path, {'Out_Data':Out_Data})        
+
+    def load_mat(self, mat_data_path = None):
+        '''Load  the .mat file into numpy and return a data_dict with keys:
+        "freq,comp,inten,phase". You can either PlotTools.plot() a single freq point array,
+        or PlotTools.plot_movie() for a sweep experiment. '''
+        
+        if mat_data_path is None:
+            mat_data_path= self.config.mat_data_path
+            
+        data_dict = sio.loadmat(mat_data_path)    
+        data = data_dict['Out_Data']
+
+        freq = data[0]
+        comp = data[1]
+        inten = data[2]
+        phase = data[3]
+        
+        data = {'freq':freq,
+                'comp':comp,
+                'inten':inten,
+                'phase':phase
+                }
+        
+        return data                   
                            
 class PlotTools(object):
     def __init__(self, Config):
         self.config = Config 
         plt.figure()
         plt.ion()    
-        dummy = np.zeros((self.config.Num_x_pts,self.config.Num_y_pts))
- 
-        im1 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
-        #plt.colorbar(im1)   
- 
-        im2 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
-        plt.colorbar(im2)  
+#        dummy = np.zeros((self.config.Num_x_pts,self.config.Num_y_pts))
+# 
+#        im1 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
+#        #plt.colorbar(im1)   
+# 
+#        im2 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
+#        plt.colorbar(im2)  
                       
     def plot(self, real, intensity, z=0):
         '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
@@ -487,7 +512,32 @@ class PlotTools(object):
         #plt.ylabel('Y axis points')
         
         plt.draw()
+
+    def plot_movie(self, data_dict, type = 'real', pause = 0.5):
+        '''Show movie of plots specify type as 'real,inten, phase' and pause is in seconds.
+        defaults are 'real' and 0.5 . Use ArrayTools.load_mat() to get the .mat file into a numpy array. '''
         
+        if data_dict['freq'].shape[0] == 1:
+            raise Exception, """This method is for showing xy planes of data for multiple freq's.
+The data you sent in is only one dimensional, that is, single point ( single freq ) data. """
+        
+        plt.colorbar()
+        plt.xlabel('X axis points')
+        plt.ylabel('Y axis points')
+        
+        freq = data_dict['freq']
+        
+        if type == 'real':  
+            data_to_show = data_dict['real'].real
+        else:
+           data_to_show = data_dice[type]
+         
+        for i in xrange(0,data_to_show.shape[0]):   
+            plt.imshow(data_to_show[i,:,:],'hot',None,None,'nearest')
+            plt.title('Freq: %s' %str( freq[i] ) ) 
+            plt.draw()
+            sleep(pause)
+
     def close_plot(self):
         plt.close('all')
         
