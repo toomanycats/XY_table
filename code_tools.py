@@ -484,7 +484,7 @@ class PlotTools(object):
         im2 = plt.imshow(intensity[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
         plt.title('Intensity ( x^2 + y^2) Linear Scale') 
         plt.xlabel('X axis points')
-        plt.ylabel('Y axis points')
+        #plt.ylabel('Y axis points')
         
         plt.draw()
         
