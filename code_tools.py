@@ -485,15 +485,17 @@ is the single point type. Check the configuration file located in the experiment
 class PlotTools(object):
     def __init__(self, Config):
         self.config = Config 
+        
         plt.figure()
         plt.ion()    
-#        dummy = np.zeros((self.config.Num_x_pts,self.config.Num_y_pts))
-# 
-#        im1 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
-#        #plt.colorbar(im1)   
-# 
-#        im2 = plt.imshow(dummy, interpolation='nearest', origin='lower', cmap = plt.cm.jet)       
-#        plt.colorbar(im2)  
+
+        dummy = np.zeros((self.config.Num_x_pts,self.config.Num_y_pts))
+        
+        im1 = plt.imshow(dummy, interpolation='nearest', origin='lower')     
+        im2 = plt.imshow(dummy, interpolation='nearest', origin='lower')   
+        
+        c_scale = Normalize(-10, 10,clip=False)
+        cbar = plt.colorbar(cmap=plt.cm.hot,norm=c_scale,shrink=0.5,extend='both')       
                       
     def plot(self, real, intensity, z=0):
         '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
@@ -521,7 +523,6 @@ class PlotTools(object):
             raise Exception, """This method is for showing xy planes of data for multiple freq's.
 The data you sent in is only one dimensional, that is, single point ( single freq ) data. """
         
-        plt.colorbar()
         plt.xlabel('X axis points')
         plt.ylabel('Y axis points')
         
