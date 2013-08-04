@@ -491,23 +491,23 @@ class PlotTools(object):
 
         dummy = np.zeros((self.config.Num_x_pts,self.config.Num_y_pts))
         
-        im1 = plt.imshow(dummy, interpolation='nearest', origin='lower')     
-        im2 = plt.imshow(dummy, interpolation='nearest', origin='lower')   
+        im1 = plt.imshow(dummy, cmap='jet', interpolation='nearest', origin='lower')     
+        im2 = plt.imshow(dummy, cmap='jet', interpolation='nearest', origin='lower')   
         
-        cbar = plt.colorbar(cmap=plt.cm.hot)       
+        cbar = plt.colorbar()       
                       
     def plot(self, real, intensity, z=0):
         '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
         xy plane you want to plot. For single point mode, z = 0 (default), for sweep you must choose. '''
         
         plt.subplot(1,2,1)
-        im1 = plt.imshow(real[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        im1 = plt.imshow(real[z,:,:], cmap='jet', interpolation='nearest', origin='lower')   
         plt.title('Electric Field Linear Scale')
         plt.xlabel('X axis points')
         plt.ylabel('Y axis points')
 
         plt.subplot(1,2,2)
-        im2 = plt.imshow(intensity[z,:,:], interpolation='nearest', origin='lower', cmap = plt.cm.jet)   
+        im2 = plt.imshow(intensity[z,:,:], cmap='jet',interpolation='nearest', origin='lower')   
         plt.title('Intensity ( x^2 + y^2) Linear Scale') 
         plt.xlabel('X axis points')
         #plt.ylabel('Y axis points')
