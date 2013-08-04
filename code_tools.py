@@ -1,16 +1,16 @@
-import math
-import smtplib
 from email.mime.text import MIMEText
-import numpy as np
-from  getpass import getuser
-import datetime
-import numpy as np
-from os import path,makedirs
-import matplotlib.pyplot as plt
+from getpass import getuser
 from mpl_toolkits.mplot3d import Axes3D
-import scipy.io as sio
-import ConfigParser
+from os import path, makedirs
 from time import sleep
+import ConfigParser
+import datetime
+import math
+import matplotlib.pyplot as plt
+import numpy as np
+import numpy as np
+import scipy.io as sio
+import smtplib
 
 class ConfigureDataSet(object):
     def __init__(self):
@@ -494,8 +494,7 @@ class PlotTools(object):
         im1 = plt.imshow(dummy, interpolation='nearest', origin='lower')     
         im2 = plt.imshow(dummy, interpolation='nearest', origin='lower')   
         
-        c_scale = Normalize(-10, 10,clip=False)
-        cbar = plt.colorbar(cmap=plt.cm.hot,norm=c_scale,shrink=0.5,extend='both')       
+        cbar = plt.colorbar(cmap=plt.cm.hot)       
                       
     def plot(self, real, intensity, z=0):
         '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
