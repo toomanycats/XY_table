@@ -17,28 +17,35 @@ def main(path, type, Sleep):
 
     if type == 'real':
         pdata = comp.real
+        vmin = pdata.min(0).mean()/pdata.min(0).std()
+        vmax = pdata.max(0).mean()/pdata.max(0).std()
     elif type == 'inten':
         pdata = inten
+        vmin = 0
+        vmax = pdata.max(0).mean()/pdata.max(0).std()
     elif type == 'mag':
         pdata = np.sqrt(inten)
+        vmin = 0
+        vmax = pdata.max(0).mean()/pdata.max(0).std() 
     elif type == 'phase':
         pdata = phase
+        vmin = pdata.min()
+        vmax = pdata.max() 
 
     plt.ion()
     plt.figure()
 
-    vmin = pdata.min(0).mean() - pdata.min(0).std()#along z axis
-    vmax = pdata.max(0).mean() + pdata.max(0).std()
+    
 
     plt.imshow(pdata[0,:,:],cmap='jet',interpolation='nearest',vmin=vmin,vmax=vmax,origin='lower')
-    plt.title('Freq: %s' %str( freq[0] ) )
+    plt.title('Type:  %s  Freq: %e' %(type,freq[0]) )
     plt.colorbar()
 
     sleep(Sleep)
 
     for i in xrange(1,pdata.shape[0]):
-        plt.imshow(pdata[i,:,:],None,None,None,'nearest');
-        plt.title('Freq: %s' %str(freq[i]))
+        plt.imshow(pdata[i,:,:],cmap='jet',interpolation='nearest',vmin=vmin,vmax=vmax,origin='lower')
+        plt.title('Type:  %s  Freq: %e' %(type,freq[i]) )
         plt.draw()
         sleep(Sleep)
 
@@ -50,7 +57,7 @@ if __name__ == "__main__":
     parser.add_option("-t", "--type", dest="type", default='real',
                   help="types are: real, inten, phase, mag")
 
-    parser.add_option("-s","--sleep",dest="Sleep", type="float", default=0.5,
+    parser.add_option("-s","--sleep",dest="Sleep", type="float", default=0.3,
                   help="number or fraction of seconds to pause between frames")
 
     (options, args) = parser.parse_args()
