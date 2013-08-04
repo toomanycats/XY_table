@@ -514,27 +514,45 @@ class PlotTools(object):
         
         plt.draw()
 
-    def plot_movie(self, data_dict, type = 'real', pause = 0.5):
+    def plot_movie(self, data_dict, type = 'real', pause = 0.25):
         '''Show movie of plots specify type as 'real,inten, phase' and pause is in seconds.
-        defaults are 'real' and 0.5 . Use ArrayTools.load_mat() to get the .mat file into a numpy array. '''
+        defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array. '''
         
         if data_dict['freq'].shape[0] == 1:
             raise Exception, """This method is for showing xy planes of data for multiple freq's.
-The data you sent in is only one dimensional, that is, single point ( single freq ) data. """
+The data you sent in is only one dimensional, that is, single freq (vna setting of single point) data. """
         
-        plt.xlabel('X axis points')
-        plt.ylabel('Y axis points')
+        if type == 'real':
+            pdata = data_dict['real']
+            vmin = pdata.min(0).mean()/pdata.min(0).std()
+            vmax = pdata.max(0).mean()/pdata.max(0).std()
         
-        freq = data_dict['freq']
-        
-        if type == 'real':  
-            data_to_show = data_dict['real'].real
-        else:
-           data_to_show = data_dice[type]
-         
-        for i in xrange(0,data_to_show.shape[0]):   
-            plt.imshow(data_to_show[i,:,:],'hot',None,None,'nearest')
-            plt.title('Freq: %s' %str( freq[i] ) ) 
+        elif type == 'inten':
+            pdata = data_dict['inten']
+            vmin = 0
+            vmax = pdata.max(0).mean()/pdata.max(0).std()
+        elif type == 'mag':
+            pdata = data_dict['inten']
+            pdata = np.sqrt(pdata)
+            vmin = 0
+            vmax = pdata.max(0).mean()/pdata.max(0).std() 
+        elif type == 'phase':
+            pdata = data_dict['phase']
+            vmin = pdata.min()
+            vmax = pdata.max() 
+    
+        plt.ion()
+        plt.figure()
+    
+        plt.imshow(pdata[0,:,:],cmap='jet',interpolation='nearest',vmin=vmin,vmax=vmax,origin='lower')
+        plt.title('Type:  %s  Freq: %e' %(type,freq[0]) )
+        plt.colorbar()
+    
+        sleep(pause)
+    
+        for i in xrange(1,pdata.shape[0]):
+            plt.imshow(pdata[i,:,:],cmap='jet',interpolation='nearest',vmin=vmin,vmax=vmax,origin='lower')
+            plt.title('Type:  %s  Freq: %e' %(type,freq[i]) )
             plt.draw()
             sleep(pause)
 
