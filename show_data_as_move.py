@@ -35,8 +35,6 @@ def main(path, type, Sleep):
     plt.ion()
     plt.figure()
 
-    
-
     plt.imshow(pdata[0,:,:],cmap='jet',interpolation='nearest',vmin=vmin,vmax=vmax,origin='lower')
     plt.title('Type:  %s  Freq: %e' %(type,freq[0]) )
     plt.colorbar()

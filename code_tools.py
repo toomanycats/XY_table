@@ -240,7 +240,7 @@ class CodeTools(object):
         return(s)
 
 class ArrayTools(object):
-    def __init__(self, Config):
+    def __init__(self, Config = None):
         self.config = Config
   
     def save_readme(self):
@@ -468,37 +468,25 @@ is the single point type. Check the configuration file located in the experiment
             
         data_dict = sio.loadmat(mat_data_path)    
         data = data_dict['Out_Data']
-
-        freq = data[0]
-        comp = data[1]
-        inten = data[2]
-        phase = data[3]
         
-        data = {'freq':freq,
-                'comp':comp,
-                'inten':inten,
-                'phase':phase
-                }
+        out_data = {'freq':data[0],
+                    'comp':data[1],
+                    'inten':data[2],
+                    'phase':data[3]
+                    }
         
-        return data                   
+        return out_data                   
                            
 class PlotTools(object):
-    def __init__(self, Config):
-        self.config = Config 
-        
+    def __init__(self, Config = None):
+        self.config = Config          
         plt.figure()
-        plt.ion()    
-
-        dummy = np.zeros((self.config.Num_x_pts,self.config.Num_y_pts))
-        
-        im1 = plt.imshow(dummy, cmap='jet', interpolation='nearest', origin='lower')     
-        im2 = plt.imshow(dummy, cmap='jet', interpolation='nearest', origin='lower')   
-        
-        cbar = plt.colorbar()       
+        plt.ion()
                       
     def plot(self, real, intensity, z=0):
         '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
-        xy plane you want to plot. For single point mode, z = 0 (default), for sweep you must choose. '''
+        xy plane you want to plot. For single point mode, z = 0 (default), for sweep you can choose. 
+        I do not use a color bar b/c it's gets too messy and is not that useful.'''
         
         plt.subplot(1,2,1)
         im1 = plt.imshow(real[z,:,:], cmap='jet', interpolation='nearest', origin='lower')   
@@ -510,23 +498,20 @@ class PlotTools(object):
         im2 = plt.imshow(intensity[z,:,:], cmap='jet',interpolation='nearest', origin='lower')   
         plt.title('Intensity ( x^2 + y^2) Linear Scale') 
         plt.xlabel('X axis points')
-        #plt.ylabel('Y axis points')
         
         plt.draw()
 
     def plot_movie(self, data_dict, type = 'real', pause = 0.25):
         '''Show movie of plots specify type as 'real,inten, phase' and pause is in seconds.
-        defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array. '''
-        
+        defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array. '''        
         if data_dict['freq'].shape[0] == 1:
             raise Exception, """This method is for showing xy planes of data for multiple freq's.
 The data you sent in is only one dimensional, that is, single freq (vna setting of single point) data. """
         
         if type == 'real':
-            pdata = data_dict['real']
+            pdata = data_dict['comp'].real
             vmin = pdata.min(0).mean()/pdata.min(0).std()
-            vmax = pdata.max(0).mean()/pdata.max(0).std()
-        
+            vmax = pdata.max(0).mean()/pdata.max(0).std() 
         elif type == 'inten':
             pdata = data_dict['inten']
             vmin = 0
@@ -541,18 +526,15 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
             vmin = pdata.min()
             vmax = pdata.max() 
     
-        plt.ion()
-        plt.figure()
-    
         plt.imshow(pdata[0,:,:],cmap='jet',interpolation='nearest',vmin=vmin,vmax=vmax,origin='lower')
-        plt.title('Type:  %s  Freq: %e' %(type,freq[0]) )
+        plt.title('Type:  %s  Freq: %e' %(type,data_dict['freq'][0]) )
         plt.colorbar()
     
         sleep(pause)
     
         for i in xrange(1,pdata.shape[0]):
             plt.imshow(pdata[i,:,:],cmap='jet',interpolation='nearest',vmin=vmin,vmax=vmax,origin='lower')
-            plt.title('Type:  %s  Freq: %e' %(type,freq[i]) )
+            plt.title('Type:  %s  Freq: %e' %(type,data_dict['freq'][i]) ) 
             plt.draw()
             sleep(pause)
 
