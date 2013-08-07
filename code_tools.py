@@ -13,6 +13,7 @@ import scipy.io as sio
 import smtplib
 
 class ConfigureDataSet(object):
+    '''Mehtods to setup of the experiment variables and store them in the config file. '''
     def __init__(self):
         self.config_parser = ConfigParser.RawConfigParser()
         
@@ -42,11 +43,13 @@ class ConfigureDataSet(object):
         self.imag_point_dir = ''
         
     def set_misc_paths(self):
+        '''Set the paths for the config, log and .mat file. '''
         self.config_path = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.cfg' )
         self.log_file = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.log')
         self.mat_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '.mat')
 
     def make_sub_dirs(self):
+        '''Make sub-directories for the experiment. '''
         p = path.join(self.DirectoryRoot,self.ExperimentDir)
         if not path.exists(p):
             makedirs(p)
@@ -60,6 +63,9 @@ class ConfigureDataSet(object):
             makedirs(self.imag_point_dir)  
         
     def set_xy_num_pts(self):
+        '''The total number of data points will be the number of points in X times
+        the number of points in Y. '''
+        
         self.Num_x_pts = int(np.ceil(self.X_length / self.X_res))
         self.Num_y_pts = int(np.ceil(self.Y_length / self.Y_res))
 
@@ -100,6 +106,7 @@ class ConfigureDataSet(object):
         self._add_entries()
   
     def _add_entries(self):
+        '''Add variables set from get_config_from_user(), to a config file.'''
         self.config_parser.add_section('Paths')
         self.config_parser.set('Paths', 'DirectoryRoot', self.DirectoryRoot)
         self.config_parser.set('Paths', 'ExperimentDir', self.ExperimentDir)
@@ -134,7 +141,7 @@ class ConfigureDataSet(object):
     def load_config(self, config_path = None):
         '''Reads the config file and sets the class attributes. You can pass in
         a config file path or the default is the one in the config object,
-        config.config_path. '''
+        self.config_path. '''
         #ascii cfg file can't read back other types, str must be caste
         if config_path is None:
             config_path = self.config_path
@@ -171,11 +178,12 @@ class ConfigureDataSet(object):
         self.set_xy_num_pts()
   
     def write_config(self):
+        '''Write the config object to disk as an ascii file. '''
         with open(self.config_path, 'w') as configfile:
             self.config_parser.write(configfile)
 
 class CodeTools(object):
-    '''Contains methods used for the combination of motor tools and vna tools '''    
+    '''Misc. methods. '''    
     
     def _notify_admin_error(self, username, date, traceback):
 
@@ -240,48 +248,20 @@ class CodeTools(object):
         return(s)
 
 class ArrayTools(object):
+    '''Methods for working with Numpy arrays. '''
     def __init__(self, Config = None):
         self.config = Config
   
-    def save_readme(self):
-        '''Savess a text file named "README" in the experiment roor directory that 
-        contains the vitals of the settings. Parse this file for import info. '''
-        header_template = '''
-Directory = %(path)s
-FreqStart = %(freq_start)s
-FreqStop =  %(freq_stop)s
-Freq_num_pts = %(freq_res)s
-X_length = %(x_len)s
-X_res = %(x_res)s
-Y_length = %(y_len)s
-Y_res = %(y_res)s
-Username = %(user)s
-Date = %(date)s
-X Origin = %(x_origin)s
-Y Origin = %(y_origin)s
- ''' %{'path':path.join(self.config.DirectoryRoot,self.config.ExperimentDir),
-       'freq_start':self.config.FreqStart,
-       'freq_stop':self.config.FreqStop,
-       'freq_res':self.config.Freq_num_pts,
-       'x_len':self.config.X_length,
-       'y_len':self.config.Y_length,
-       'x_res':self.config.X_res,
-       'y_res':self.config.Y_res,
-       'user':self.config.Username,
-       'date':self.config.Date,
-       'x_origin':self.config.X_origin,
-       'y_origin':self.config.Y_origin
-       }
-
-        fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '_README.dat')
-        f = open(fullpath,'w')
-        f.write(header_template)
-        f.close()
-
+    def _check_data_type(self, dtype, data):
+        '''Some np methods are meant to work on certain types, but won't always throw
+        an error because it's not mathematically incorrect to try. '''
+        if data.dtype != dtype:
+            raise Exception, "The data sent into this method is not of the type %s." %dtype
+        
     def save_data_to_file(self, data_point, data, dtype):  
         '''This method saves each data point vector into a text file. The arg 'type'
         is 'mag' or 'phase' . The data type arg is used to chronologically number the points for
-        a later reconstruction. The files are saved into their respective sub dirs, Mag and Phase.''' 
+        a later reconstruction.''' 
         
         file_name = "%(name_prefix)s_%(type)s_%(file_num)s.dat" %{'name_prefix':self.config.FileNamePrefix
                                                         ,'file_num':str(data_point).zfill(5),
@@ -305,42 +285,54 @@ Y Origin = %(y_origin)s
         elif isinstance(data,np.float64):#used when data  = np.abs(data[0])
             self._write_single_data_point(fullpath, data)
           
-        print "File Saved Successfully.\n"
+        print "%s File Saved Successfully.\n" %dtype
 
     def _write_single_data_point(self,fullpath, data):
-        '''Used to save data that is a single point, like a real or imag number. This is for data
+        '''Used to save data that is a single point, e.g., a real or imag number. This is for data
          that is not an np array. '''
         f = open(fullpath,'w')
         f.write(str(data))
         f.close() 
                 
     def make_3d_array(self):
-        '''Initialize a numpy 3D or 2D array for storing Mag or Phase data. This is for using PYthon to
-        view the data during the experiment. The lab protocol for storing the data for outside analysis is to
-        save all the real and imaginary parts as separate long column of text values. '''
+        '''Initialize a numpy 3D or 2D array for storing  data. This is for using PYthon to
+        view the data during the experiment. '''
         
         array = np.zeros((self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))
         
         return array
  
     def get_real(self, data):
+        '''Return the real part of the complex data. '''
+        #np.real will not throw an error is the data is other than complex.
+        # in this case, the data should always be complex
+        self._check_data_type('complex128',data)
+        
         real_data = np.real(data)
       
         return real_data
     
     def get_imag(self,data):
+        '''Return the imaginary part of the complex data. '''
+        self._check_data_type('complex128',data)
+        
         imag_data = np.imag(data)
         
         return imag_data
     
     def get_magnitude(self, data):
         '''Takes col of complex numbers and returns col of mag. '''
+        self._check_data_type('complex128',data)
+        
         mag_data = np.zeros(data.shape, dtype=float)
         mag_data = np.abs(data)
         
         return mag_data 
 
     def get_intensity(self,data):
+        '''Return the intensity of the complex data, i.e., x^2 + i*y^2 '''
+        self._check_data_type('complex128',data)
+        
         inten_data = np.zeros(data.shape, dtype=float)
         inten_data = np.real(data)**2 + np.imag(data)**2
         
@@ -348,12 +340,16 @@ Y Origin = %(y_origin)s
 
     def get_phase(self,data):
         '''Takes cols of complex and returns col of phase '''
+        self._check_data_type('complex128',data)
+        
         phase_data = np.zeros(data.shape,dtype=float)
         phase_data = np.angle(data, False)# no degrees only radians
 
         return phase_data
    
     def get_freq_vector(self, config = None):
+        '''Given a config path or use the default one, return an np array of frequency values that match 
+        the ones used in the experiment. '''
         try:
             if config is None:# allows for stand alone program to call this method
                 config = self.config
@@ -400,8 +396,8 @@ is the single point type. Check the configuration file located in the experiment
         return data    
 
     def reshape_1D_to_3D(self, data):        
-        '''Takes col of data and writes a 3D array to disk. Used if the automatic 3D array is NOT being used. 
-        FOr instance, you retook some data points and want to compile a new 3D matrix (ascii format)'''      
+        '''Used to recreate the np array of data in it's proper dimensions. Normally used after the
+        load_data_files().'''      
         outdata = np.zeros((self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))  
         outdata = np.reshape(data,(self.config.Freq_num_pts,self.config.Num_y_pts,self.config.Num_x_pts))
         
@@ -456,7 +452,7 @@ is the single point type. Check the configuration file located in the experiment
         Out_Data[2] = temp[2]
         Out_Data[3] = temp[3]
       
-        sio.savemat(mat_data_path, {'Out_Data':Out_Data})        
+        sio.savemat(mat_data_path, {'Data':Out_Data})        
 
     def load_mat(self, mat_data_path = None):
         '''Load  the .mat file into numpy and return a data_dict with keys:
@@ -467,7 +463,7 @@ is the single point type. Check the configuration file located in the experiment
             mat_data_path= self.config.mat_data_path
             
         data_dict = sio.loadmat(mat_data_path)    
-        data = data_dict['Out_Data']
+        data = data_dict['Data']
         
         out_data = {'freq':data[0],
                     'comp':data[1],
@@ -478,15 +474,16 @@ is the single point type. Check the configuration file located in the experiment
         return out_data                   
                            
 class PlotTools(object):
+    '''Methods for plotting the data. '''
     def __init__(self, Config = None):
         self.config = Config          
         plt.figure()
         plt.ion()
                       
     def plot(self, real, intensity, z=0):
-        '''Plot the data in-vivo as a check on the experiment using numpy. The z arg is the
-        xy plane you want to plot. For single point mode, z = 0 (default), for sweep you can choose. 
-        I do not use a color bar b/c it's gets too messy and is not that useful.'''
+        '''Plot the data in real time as it is collected, as a check on the experiment using numpy. 
+        The z arg is the xy plane you want to plot. For single point mode, z = 0 (default), for sweep 
+        you can choose. I do not use a color bar b/c it's gets too messy and is not that useful.'''
         
         plt.subplot(1,2,1)
         im1 = plt.imshow(real[z,:,:], cmap='jet', interpolation='nearest', origin='lower')   
@@ -502,8 +499,10 @@ class PlotTools(object):
         plt.draw()
 
     def plot_movie(self, data_dict, type = 'real', pause = 0.25):
-        '''Show movie of plots specify type as 'real,inten, phase' and pause is in seconds.
-        defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array. '''        
+        '''Show movie of plots. Specify type as 'real,inten, phase' and pause is in seconds.
+        defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array.
+        A colorbar is used here. This method is for a completed run. '''        
+
         if data_dict['freq'].shape[0] == 1:
             raise Exception, """This method is for showing xy planes of data for multiple freq's.
 The data you sent in is only one dimensional, that is, single freq (vna setting of single point) data. """
