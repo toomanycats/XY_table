@@ -478,7 +478,11 @@ is the single point type. Check the configuration file located in the experiment
 class PlotTools(object):
     '''Methods for plotting the data. '''
     def __init__(self, Config = None):
-        self.config = Config          
+        self.config = Config     
+
+        y_scale = np.ceil(self.config.Num_y_pts / float(self.config.Num_x_pts))
+        self.extent_dim = (0, self.config.Num_x_pts, 0, y_scale * self.config.Num_y_pts)     
+
         plt.figure()
         plt.ion()
                       
@@ -486,15 +490,15 @@ class PlotTools(object):
         '''Plot the data in real time as it is collected, as a check on the experiment using numpy. 
         The z arg is the xy plane you want to plot. For single point mode, z = 0 (default), for sweep 
         you can choose. I do not use a color bar b/c it's gets too messy and is not that useful.'''
-        
+         
         plt.subplot(1,2,1)
-        im1 = plt.imshow(real[z,:,:], cmap='jet', interpolation='nearest', origin='lower')   
+        im1 = plt.imshow(real[z,:,:], cmap='jet', interpolation='nearest', origin='lower', extent = self.extent_dim)   
         plt.title('Electric Field Linear Scale')
         plt.xlabel('X axis points')
         plt.ylabel('Y axis points')
 
         plt.subplot(1,2,2)
-        im2 = plt.imshow(intensity[z,:,:], cmap='jet',interpolation='nearest', origin='lower')   
+        im2 = plt.imshow(intensity[z,:,:], cmap='jet',interpolation='nearest', origin='lower',extent = self.extent_dim)   
         plt.title('Intensity ( x^2 + y^2) Linear Scale') 
         plt.xlabel('X axis points')
         
