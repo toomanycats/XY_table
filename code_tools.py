@@ -500,35 +500,35 @@ class PlotTools(object):
         
         plt.draw()
 
-    def plot_movie(self, data_dict, type = 'real', pause = 0.25, vmin = None, vmax = None):
-        '''Show movie of plots. Specify type as 'real,inten, phase' and pause is in seconds.
+    def plot_movie(self, data_dict, Type = 'real', pause = 0.25, vmin = None, vmax = None):
+        '''Show movie of plots. Specify Type as 'real,inten, phase' and pause is in seconds.
         defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array.
         A colorbar is used here. This method is for a completed run. '''        
 
-        if data_dict['freq'].shape[0] == 1:
+        if len(data_dict['freq'].shape) == 0:
             raise Exception, """This method is for showing xy planes of data for multiple freq's.
 The data you sent in is only one dimensional, that is, single freq (vna setting of single point) data. """
         
-        if type == 'real':
+        if Type == 'real':
             pdata = data_dict['comp'].real
             if vmin is None:
                 vmin = pdata.min(0).mean()/pdata.min(0).std()
             if vmax is None:
                 vmax = pdata.max(0).mean()/pdata.max(0).std() 
-        elif type == 'inten':
+        elif Type == 'inten':
             pdata = data_dict['inten']
             if vmin is None:
                 vmin = 0
             if vmax is None:    
                 vmax = pdata.max(0).mean()/pdata.max(0).std()
-        elif type == 'mag':
+        elif Type == 'mag':
             pdata = data_dict['inten']
             pdata = np.sqrt(pdata)
             if vmin is None:
                 vmin = 0
             if vmax is None:    
                 vmax = pdata.max(0).mean()/pdata.max(0).std() 
-        elif type == 'phase':
+        elif Type == 'phase':
             pdata = data_dict['phase']
             if vmin is None:
                 vmin = pdata.min()
@@ -536,14 +536,14 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
                 vmax = pdata.max() 
     
         plt.imshow(pdata[0,:,:],cmap='jet',interpolation='nearest',vmin=-1,vmax=0.5,origin='lower')
-        plt.title('Type:  %s  Freq: %e' %(type,data_dict['freq'][0]) )
+        plt.title('Type:  %s  Freq: %e' %(Type,data_dict['freq'][0]) )
         plt.colorbar()
     
         sleep(pause)
     
         for i in xrange(1,pdata.shape[0]):
             plt.imshow(pdata[i,:,:],cmap='jet',interpolation='nearest',vmin=vmin,vmax=vmax,origin='lower')
-            plt.title('Type:  %s  Freq: %e' %(type,data_dict['freq'][i]) ) 
+            plt.title('Type:  %s  Freq: %e' %(Type,data_dict['freq'][i]) ) 
             plt.draw()
             sleep(pause)
 
