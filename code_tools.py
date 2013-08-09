@@ -46,7 +46,7 @@ class ConfigureDataSet(object):
         '''Set the paths for the config, log and .mat file. '''
         self.config_path = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.cfg' )
         self.log_file = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.log')
-        self.mat_data_path = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,self.config.FileNamePrefix + '.mat')
+        self.mat_data_path = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.mat')
 
     def make_sub_dirs(self):
         '''Make sub-directories for the experiment. '''
@@ -101,9 +101,6 @@ class ConfigureDataSet(object):
         self.set_xy_num_pts()
         self.make_sub_dirs()
         self.set_misc_paths()
- 
-        #add these var to the config parser
-        self._add_entries()
   
     def _add_entries(self):
         '''Add variables set from get_config_from_user(), to a config file.'''
@@ -179,6 +176,7 @@ class ConfigureDataSet(object):
   
     def write_config(self):
         '''Write the config object to disk as an ascii file. '''
+        self._add_entries()
         with open(self.config_path, 'w') as configfile:
             self.config_parser.write(configfile)
 
@@ -418,7 +416,7 @@ is the single point type. Check the configuration file located in the experiment
 
         np.savetxt(fullpath, data)    
 
-    def save_data_as_matlab(self, real_array, imag_array, mat_data_path = None):
+    def save_data_as_matlab(self, real_array, imag_array, mat_data_path = None, mode = None):
         '''Given a np array of real data and another of imaginary data, write the np array into 
         a complex matrix .mat binary file for use in MATLAB. The out put path default is the experimental
         root directory. You can send in an outpath arg for use in a stand alone program.  '''
@@ -432,11 +430,15 @@ is the single point type. Check the configuration file located in the experiment
         comp_data = np.zeros((real_array.shape), dtype=complex)
         comp_data.real = real_array
         comp_data.imag = imag_array
-
-        if real_array.ndim == 3:
+    
+        if mode is None:
+            mode = self.config.Mode
+        if mode == 'sweep':
             freq_data = self.get_freq_vector()
-        else:
+        elif mode == 'single':
             freq_data = self.config.SingleFrequency
+        else:
+            raise Exception, "Mode type was not one of either 'single' or 'sweep'."
         
         data = np.zeros((real_array.shape),dtype=complex)
         data.real = real_array
@@ -498,7 +500,7 @@ class PlotTools(object):
         
         plt.draw()
 
-    def plot_movie(self, data_dict, type = 'real', pause = 0.25):
+    def plot_movie(self, data_dict, type = 'real', pause = 0.25, vmin = None, vmax = None):
         '''Show movie of plots. Specify type as 'real,inten, phase' and pause is in seconds.
         defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array.
         A colorbar is used here. This method is for a completed run. '''        
@@ -509,23 +511,31 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
         
         if type == 'real':
             pdata = data_dict['comp'].real
-            vmin = pdata.min(0).mean()/pdata.min(0).std()
-            vmax = pdata.max(0).mean()/pdata.max(0).std() 
+            if vmin is None:
+                vmin = pdata.min(0).mean()/pdata.min(0).std()
+            if vmax is None:
+                vmax = pdata.max(0).mean()/pdata.max(0).std() 
         elif type == 'inten':
             pdata = data_dict['inten']
-            vmin = 0
-            vmax = pdata.max(0).mean()/pdata.max(0).std()
+            if vmin is None:
+                vmin = 0
+            if vmax is None:    
+                vmax = pdata.max(0).mean()/pdata.max(0).std()
         elif type == 'mag':
             pdata = data_dict['inten']
             pdata = np.sqrt(pdata)
-            vmin = 0
-            vmax = pdata.max(0).mean()/pdata.max(0).std() 
+            if vmin is None:
+                vmin = 0
+            if vmax is None:    
+                vmax = pdata.max(0).mean()/pdata.max(0).std() 
         elif type == 'phase':
             pdata = data_dict['phase']
-            vmin = pdata.min()
-            vmax = pdata.max() 
+            if vmin is None:
+                vmin = pdata.min()
+            if vmax is None:    
+                vmax = pdata.max() 
     
-        plt.imshow(pdata[0,:,:],cmap='jet',interpolation='nearest',vmin=vmin,vmax=vmax,origin='lower')
+        plt.imshow(pdata[0,:,:],cmap='jet',interpolation='nearest',vmin=-1,vmax=0.5,origin='lower')
         plt.title('Type:  %s  Freq: %e' %(type,data_dict['freq'][0]) )
         plt.colorbar()
     

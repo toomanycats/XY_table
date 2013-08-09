@@ -22,7 +22,7 @@ class Connection(object):
         pat = "[0-9]{9}\\r\\n|[0-9]{9}\\n"
         sn = self._loop_structure(con, pat)
         print sn
-        sn = sn.replace('\r\n','')
+        sn = sn.strip()
 
         return sn
      
@@ -56,7 +56,9 @@ class Connection(object):
             print "Connection failed waiting 5 seconds and trying again.\n"
             try:
                 self.con1.close()
+                sleep(1)
                 self.con2.close()
+                sleep(1)
             except:
                 pass  
             if self.connection_attempts < 4:  
@@ -122,6 +124,8 @@ class Motor(object):
         self._set_var('A',acceleration) # acceleration
         self._set_var('VM',max_vel)# max velocity
         self._set_var('VI',init_vel)# initial velocity
+        # when a motor is instantiated, use the current P for the linear dist.
+        self.CurrentPos = self._calculate_pos(self._get_current_step()) 
        
     def _check_reached_limit_switch(self):
         '''Query the motor to determine if either limit switch has been reached. Returns 

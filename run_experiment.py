@@ -22,7 +22,7 @@ do not need to re-reference the home location (yes/no). : """)
         return
     else:
         print "You did not enter 'yes' or 'no' ."
-        return_home()
+        prompt_for_return_home()
 
 def set_origin():
     config.X_origin = mx.CurrentPos
@@ -197,4 +197,4 @@ except:
         pass
     finally:  
         pass  
-        code_tools.CodeTools()._notify_admin_error(config.Username, config.Date, tb)
+        #code_tools.CodeTools()._notify_admin_error(config.Username, config.Date, tb)
