@@ -480,8 +480,10 @@ class PlotTools(object):
     def __init__(self, Config = None):
         self.config = Config     
 
-        y_scale = np.ceil(self.config.Num_y_pts / float(self.config.Num_x_pts))
-        self.extent_dim = (0, self.config.Num_x_pts, 0, y_scale * self.config.Num_y_pts)     
+        y_scale = np.ceil(self.config.Y_length / float(self.config.Num_y_pts ) )
+        x_scale = np.ceil(self.config.X_length / float(self.config.Num_x_pts ) )
+        
+        self.extent_dim = (0, x_scale * self.config.Num_x_pts, 0, y_scale * self.config.Num_y_pts)     
 
         plt.figure()
         plt.ion()
