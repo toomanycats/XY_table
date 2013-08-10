@@ -485,76 +485,67 @@ class PlotTools(object):
         plt.figure()
         plt.ion()
 
-    def get_extent(self, dim):
+    def _get_extent(self, dim):
         '''Get a tuple for the extent of an imshow() plot, so that the plot has the
-        the correct ratio. Input dim is 2, or 3. 
+        the correct ratio. Input dim is 2, or 3.'''
         
-        get_extent(self, dim)'''
-        
-        y_scale = np.ceil(self.config.Y_length / float(self.config.Num_y_pts ) )
-        x_scale = np.ceil(self.config.X_length / float(self.config.Num_x_pts ) )
-        
-        extent_dim = (0, x_scale * self.config.Num_x_pts, 0, y_scale * self.config.Num_y_pts) 
-        
+        if self.config.Num_x_pts > self.config.Num_y_pts:
+            r = np.ceil(self.config.Num_x_pts / self.config.Num_y_pts)
+            y_scale = r * self.config.Num_y_pts
+            extent_dim = (0, self.config.Num_x_pts, 0, y_scale) 
+
+        if self.config.Num_x_pts < self.config.Num_y_pts:
+            r = np.ceil(self.config.Num_y_pts / self.config.Num_x_pts)
+            x_scale = r * self.config.Num_x_pts
+            extent_dim = (0, x_scale, 0, self.config.Num_y_pts) 
+            
         if dim == 2:    
             return extent_dim 
         
         elif dim == 3:
-            extent_dim = np.concatenate((extent_dim,[self.config.FreqStart,self.config.FreqStop])) 
+            extent_dim = np.concatenate((extent_dim,[0, self.config.Freq_num_pts])) 
         
             return extent_dim
         else:
-            raise Exception, "Argument is an int of 2 or 3 only. A %g   was supplied." %dim
+            raise Exception, "Argument is an int of 2 or 3 only. %g   was supplied." %dim
   
     def get_data_type_scale(self, data_dict, Type):
         '''Send in the data_dict from load_mat() and the Type, 'real, inten, phase,mag' and get back the
-        data of type requested and the scaled vmin and vmax for use with the colorbar.
-        
-        get_extrema_scale(self, data_dict, Type) '''
+        data of type requested and the scaled vmin and vmax for use with the colorbar.'''
         
         if Type == 'real':
             data = data_dict['comp'].real
-            if vmin is None:
-                vmin = data.min(0).mean()/data.min(0).std()
-            if vmax is None:
-                vmax = data.max(0).mean()/data.max(0).std() 
+            vmin = data.min(0).mean()/data.min(0).std()
+            vmax = data.max(0).mean()/data.max(0).std() 
         elif Type == 'inten':
             data = data_dict['inten']
-            if vmin is None:
-                vmin = 0
-            if vmax is None:    
-                vmax = data.max(0).mean()/data.max(0).std()
+            vmin = 0
+            vmax = data.max(0).mean()/data.max(0).std()
         elif Type == 'mag':
             data = data_dict['inten']
             data = np.sqrt(data)
-            if vmin is None:
-                vmin = 0
-            if vmax is None:    
-                vmax = data.max(0).mean()/data.max(0).std() 
+            vmin = 0    
+            vmax = data.max(0).mean()/data.max(0).std() 
         elif Type == 'phase':
             data = data_dict['phase']
-            if vmin is None:
-                vmin = data.min()
-            if vmax is None:    
-                vmax = data.max() 
+            vmin = data.min()  
+            vmax = data.max() 
                       
         return data,vmin,vmax                             
    
     def get_nearest_freq(self, freq_array, Freq):
-        '''Find the closest freq value in the experimental data and return the index. 
-        
-        get_nearest_freq(self, Freq)'''
+        '''Find the closest freq value in the experimental data and return the index.'''
         
         if Freq < self.config.FreqStart:
-            print "The freq you requested %f  is lower than the Start Freq of the experiment.\n" %Freq
-            print "The range of Freq is %f   to    %f" %(self.config.StartFreq, self.config.StopFreq)
+            print "The freq you requested %e  is lower than the Start Freq of the experiment.\n" %Freq
+            print "The range of Freq is %e  to    %e" %(self.config.FreqStart, self.config.FreqStop)
             return None
         elif Freq > self.config.FreqStop:
             print "The freq you requested %f  is higher than the Stop Freq of the experiment.\n" %Freq
-            print "The range of Freq is %f   to    %f" %(self.config.StartFreq, self.config.StopFreq)
+            print "The range of Freq is %e   to    %e" %(self.config.FreqStart, self.config.FreqStop)
             return None
         
-        index = np.where(freq_array >= Freq)[0]    
+        index = np.where(freq_array >= Freq)[0][0] 
         
         return index
                      
@@ -563,7 +554,7 @@ class PlotTools(object):
         The z arg is the xy plane you want to plot. For single point mode, z = 0 (default), for sweep 
         you can choose. I do not use a color bar b/c it's gets too messy and is not that useful.'''
         
-        extent_dim = self.get_extent(2)
+        extent_dim = self._get_extent(2)
          
         plt.subplot(1,2,1)
         im1 = plt.imshow(real[z,:,:], cmap='jet', interpolation='nearest', origin='lower', extent = extent_dim)   
@@ -578,46 +569,50 @@ class PlotTools(object):
         
         plt.draw()
 
-    def plot_movie(self, data_dict, Type = 'real', pause = 0.25, vmin = None, vmax = None, interp = 'bilinear'):
+    def plot_movie(self, data_dict, Type, pause = 0.25, interp = 'bilinear'):
         '''Show movie of plots. Specify Type as 'real,inten, phase' and pause is in seconds.
         defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array.
-        A colorbar is used here. This method is for a completed run. 
-        
-        plot_movie(self, data_dict, Type = 'real', pause = 0.25, vmin = None, vmax = None, interp = 'bilinear')'''        
+        A colorbar is used here. This method is for a completed run. '''        
 
+        
         if len(data_dict['freq'].shape) == 0:
             raise Exception, """This method is for showing xy planes of data for multiple freq's.
 The data you sent in is only one dimensional, that is, single freq (vna setting of single point) data. """
         
-        extent_dim = self.get_extent(2)
-        data,v_min,v_max = self.get_data_type_scale(data_dict, Type)
         
+        data,v_min, v_max = self.get_data_type_scale(data_dict, Type)
+        freq = data_dict['freq']
+        
+        extent_dim = self._get_extent(2)
+  
         plt.imshow(data[0,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)
         plt.title('Type:  %s  Freq: %e' %(Type,data_dict['freq'][0]) )
         plt.colorbar()
     
         sleep(pause)
     
-        for i in xrange(1,pdata.shape[0]):
-            plt.imshow(pdata[i,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)
+        for i in xrange(1,data.shape[0]):
+            plt.imshow(data[i,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)
             plt.title('Type:  %s  Freq: %e' %(Type,data_dict['freq'][i]) ) 
             plt.draw()
             sleep(pause)
 
     def plot_3d_barchart(self, data_dict, Type, Freq):
-        ''' Using the mayavi library, plot a 3D barchart of the data of requested type, and freq.
-        
-        plot_3d_barchart(self, data_dict, Type, freq)'''
+        ''' Using the mayavi library, plot a 3D barchart of the data of requested type, and freq.'''
     
-        extent_dim = self.get_extent(3)
+        extent_dim = self._get_extent(3)
         data,v_min,v_max = self.get_data_type_scale(data_dict, Type)
-        freq_array = freq_array = self.get_data_type_scale(data_dict, 'freq')
-        freq_ind = get_nearest_freq(freq_array,Freq)
+        freq_array = data_dict['freq']
+        freq_ind = self.get_nearest_freq(freq_array,Freq)
         
         from mayavi import mlab
-        mlab.barchart(data[freq,:,:],vmin=min_val,vmax=max_val,auto_scale=False,colormap='jet',extent = extent_dim, bgcolor=(0.5,0.5,0.5))
-        mlab.title('Freq %f' %freq[freq_ind])
-
+        mlab.figure( bgcolor=(0.5,0.5,0.5) )
+        mlab.barchart(data[freq_ind,:,:],vmin=v_min,vmax=v_max,auto_scale=False,colormap='jet',extent = extent_dim)
+        mlab.title('Freq %e' %freq_array[freq_ind])
+        mlab.show()
+         
+        #return f  
+  
     def close_plot(self):
         plt.close('all')
         
