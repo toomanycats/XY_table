@@ -537,12 +537,12 @@ class PlotTools(object):
         '''Find the closest freq value in the experimental data and return the index.'''
         
         if Freq < self.config.FreqStart:
-            print "The freq you requested %e  is lower than the Start Freq of the experiment.\n" %Freq
-            print "The range of Freq is %e  to    %e" %(self.config.FreqStart, self.config.FreqStop)
+            print "The freq you requested %.3e  is lower than the Start Freq of the experiment.\n" %Freq
+            print "The range of Freq is %.3e  to    %.3e" %(self.config.FreqStart, self.config.FreqStop)
             return None
         elif Freq > self.config.FreqStop:
             print "The freq you requested %f  is higher than the Stop Freq of the experiment.\n" %Freq
-            print "The range of Freq is %e   to    %e" %(self.config.FreqStart, self.config.FreqStop)
+            print "The range of Freq is %.3e   to    %.3e" %(self.config.FreqStart, self.config.FreqStop)
             return None
         
         index = np.where(freq_array >= Freq)[0][0] 
@@ -586,14 +586,14 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
         extent_dim = self._get_extent(2)
   
         plt.imshow(data[0,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)
-        plt.title('Type:  %s  Freq: %e' %(Type,data_dict['freq'][0]) )
+        plt.title('Type:  %s  Freq: %.3e' %(Type,data_dict['freq'][0]) )
         plt.colorbar()
     
         sleep(pause)
     
         for i in xrange(1,data.shape[0]):
             plt.imshow(data[i,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)
-            plt.title('Type:  %s  Freq: %e' %(Type,data_dict['freq'][i]) ) 
+            plt.title('Type:  %s  Freq: %.3e' %(Type,data_dict['freq'][i]) ) 
             plt.draw()
             sleep(pause)
 
@@ -608,7 +608,7 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
         from mayavi import mlab
         mlab.figure( bgcolor=(0.5,0.5,0.5) )
         mlab.barchart(data[freq_ind,:,:],vmin=v_min,vmax=v_max,auto_scale=False,colormap='jet',extent = extent_dim)
-        mlab.title('Freq %e' %freq_array[freq_ind])
+        mlab.title('Freq %.3e' %freq_array[freq_ind])
         mlab.show()
          
         #return f  
