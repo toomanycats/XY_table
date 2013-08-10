@@ -549,8 +549,8 @@ class PlotTools(object):
         
         return index
                      
-    def plot(self, real, intensity, z=0):
-        '''Plot the data in real time as it is collected, as a check on the experiment using numpy. 
+    def invivo_plot(self, real, intensity, z=0):
+        '''Plot the data in real time as it is collected for a sanity check and to monitor progress. 
         The z arg is the xy plane you want to plot. For single point mode, z = 0 (default), for sweep 
         you can choose. I do not use a color bar b/c it's gets too messy and is not that useful.'''
         

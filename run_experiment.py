@@ -68,7 +68,7 @@ def take_data(data_point, index_y, index_x):
     inten_data = arraytools.get_intensity(data)
     inten_array[:,index_y,index_x] = inten_data
 
-    plottools.plot(real_array, inten_array)
+    plottools.invivo_plot(real_array, inten_array)
 
 def _take_data():
     '''Sub routine of take_data() that deals with the single or sweep mode. '''
