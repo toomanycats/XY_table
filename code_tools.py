@@ -569,7 +569,7 @@ class PlotTools(object):
         
         plt.draw()
 
-    def plot_movie(self, data_dict, Type, pause = 0.25, interp = 'bilinear'):
+    def plot_movie(self, data_dict, Type, interp = 'bilinear', pause = 0.25):
         '''Show movie of plots. Specify Type as 'real,inten, phase' and pause is in seconds.
         defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array.
         A colorbar is used here. This method is for a completed run. '''        
@@ -586,16 +586,17 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
         extent_dim = self._get_extent(2)
   
         plt.imshow(data[0,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)
-        plt.title('Type:  %s  Freq: %.3e' %(Type,data_dict['freq'][0]) )
+        plt.title('Type:  %s  Freq: %.3e Hz' %(Type,data_dict['freq'][0]) )
         plt.colorbar()
-    
         sleep(pause)
-    
+        plt.clf() 
+     
         for i in xrange(1,data.shape[0]):
             plt.imshow(data[i,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)
-            plt.title('Type:  %s  Freq: %.3e' %(Type,data_dict['freq'][i]) ) 
+            plt.title('Type:  %s  Freq: %.3e Hz' %(Type,data_dict['freq'][i]) ) 
             plt.draw()
             sleep(pause)
+            plt.clf()
 
     def plot_3d_barchart(self, data_dict, Type, Freq):
         ''' Using the mayavi library, plot a 3D barchart of the data of requested type, and freq.'''
@@ -606,9 +607,9 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
         freq_ind = self.get_nearest_freq(freq_array,Freq)
         
         from mayavi import mlab
-        mlab.figure( bgcolor=(0.5,0.5,0.5) )
+        mlab.figure( bgcolor=(0.5,0.5,0.5) )# grey bg
         mlab.barchart(data[freq_ind,:,:],vmin=v_min,vmax=v_max,auto_scale=False,colormap='jet',extent = extent_dim)
-        mlab.title('Freq %.3e' %freq_array[freq_ind])
+        mlab.title('Freq %.3e' %freq_array[freq_ind],size=5,height=0.1)
         mlab.show()
          
         #return f  
