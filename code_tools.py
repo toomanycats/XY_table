@@ -548,6 +548,16 @@ class PlotTools(object):
         index = np.where(freq_array >= Freq)[0][0] 
         
         return index
+
+    def _set_ticks(self,x_sub_div,y_sub_div):
+        Xlocs = np.arange(0, self.config.Num_x_pts, x_sub_div) 
+        Xlabels = np.arange(0, self.config.X_length, x_sub * self.config.X_res )
+        
+        Ylocs = np.arange(0, self.config.Num_y_pts, y_sub_div) 
+        Ylabels = np.arange(0, self.config.Y_length, y_sub * self.config.Y_res )
+        
+        return Xlocs,Xlabels,Ylocs,Ylabels
+        
                      
     def invivo_plot(self, real, intensity, z=0):
         '''Plot the data in real time as it is collected for a sanity check and to monitor progress. 
@@ -566,6 +576,10 @@ class PlotTools(object):
         im2 = plt.imshow(intensity[z,:,:], cmap='jet',interpolation='nearest', origin='lower',extent = extent_dim)   
         plt.title('Intensity ( x^2 + y^2) Linear Scale') 
         plt.xlabel('X axis points')
+        
+        Xlocs,Xlabels,Ylocs,Ylabels = self._set_ticks(5,5)
+        plt.xticks(Xlocs, Xlabels)
+        plt.yticks(Ylocs,Ylabels)
         
         plt.draw()
 
