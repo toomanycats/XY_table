@@ -549,12 +549,20 @@ class PlotTools(object):
         
         return index
 
-    def _set_ticks(self,x_sub_div,y_sub_div):
-        Xlocs = np.arange(0, self.config.Num_x_pts, x_sub_div) 
-        Xlabels = np.arange(0, self.config.X_length, x_sub * self.config.X_res )
+    def _get_ticks(self,x_sub_div,y_sub_div,extent_dim):
+    
+        Xlocs = np.arange(0, extent_dim[1], x_sub_div) 
+        Ylocs = np.arange(0, extent_dim[3], y_sub_div) 
         
-        Ylocs = np.arange(0, self.config.Num_y_pts, y_sub_div) 
-        Ylabels = np.arange(0, self.config.Y_length, y_sub * self.config.Y_res )
+        if self.config.Y_res > self.config.X_res:
+            r = self.config.Y_res / float(self.config.X_res)
+            Xlabels = np.arange(0, self.config.X_length, x_sub_div * self.config.X_res )
+            Ylabels = np.arange(0, self.config.Y_length, y_sub_div * self.config.Y_res/r )
+            
+        elif self.config.Y_res < self.config.X_res:    
+            r = self.config.X_res / float(self.config.Y_res)
+            Xlabels = np.arange(0, self.config.X_length, x_sub_div * self.config.X_res/r )
+            Ylabels = np.arange(0, self.config.Y_length, y_sub_div * self.config.Y_res )
         
         return Xlocs,Xlabels,Ylocs,Ylabels
         
@@ -565,19 +573,20 @@ class PlotTools(object):
         you can choose. I do not use a color bar b/c it's gets too messy and is not that useful.'''
         
         extent_dim = self._get_extent(2)
-         
+        Xlocs,Xlabels,Ylocs,Ylabels = self._get_ticks(5,5,extent_dim)
+        
         plt.subplot(1,2,1)
         im1 = plt.imshow(real[z,:,:], cmap='jet', interpolation='nearest', origin='lower', extent = extent_dim)   
         plt.title('Electric Field Linear Scale')
         plt.xlabel('X axis points')
+        plt.xticks(Xlocs, Xlabels)
         plt.ylabel('Y axis points')
+        plt.yticks(Ylocs,Ylabels)
 
         plt.subplot(1,2,2)
         im2 = plt.imshow(intensity[z,:,:], cmap='jet',interpolation='nearest', origin='lower',extent = extent_dim)   
         plt.title('Intensity ( x^2 + y^2) Linear Scale') 
         plt.xlabel('X axis points')
-        
-        Xlocs,Xlabels,Ylocs,Ylabels = self._set_ticks(5,5)
         plt.xticks(Xlocs, Xlabels)
         plt.yticks(Ylocs,Ylabels)
         
