@@ -11,6 +11,7 @@ import numpy as np
 import numpy as np
 import scipy.io as sio
 import smtplib
+from matplotlib import rc
 
 class ConfigureDataSet(object):
     '''Mehtods to setup of the experiment variables and store them in the config file. '''
@@ -484,7 +485,10 @@ class PlotTools(object):
         self.config = Config     
         plt.figure()
         plt.ion()
-
+        # LaTeX
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif')
+    
     def _get_extent(self, dim):
         '''Get a tuple for the extent of an imshow() plot, so that the plot has the
         the correct ratio. Input dim is 2, or 3.'''
@@ -565,8 +569,7 @@ class PlotTools(object):
             Ylabels = np.arange(0, self.config.Y_length, y_sub_div * self.config.Y_res )
         
         return Xlocs,Xlabels,Ylocs,Ylabels
-        
-                     
+                      
     def invivo_plot(self, real, intensity, z=0):
         '''Plot the data in real time as it is collected for a sanity check and to monitor progress. 
         The z arg is the xy plane you want to plot. For single point mode, z = 0 (default), for sweep 
@@ -578,15 +581,15 @@ class PlotTools(object):
         plt.subplot(1,2,1)
         im1 = plt.imshow(real[z,:,:], cmap='jet', interpolation='nearest', origin='lower', extent = extent_dim)   
         plt.title('Electric Field Linear Scale')
-        plt.xlabel('X axis points')
+        plt.xlabel('Position (m)')
         plt.xticks(Xlocs, Xlabels)
-        plt.ylabel('Y axis points')
+        plt.ylabel('Position (m)')
         plt.yticks(Ylocs,Ylabels)
 
         plt.subplot(1,2,2)
         im2 = plt.imshow(intensity[z,:,:], cmap='jet',interpolation='nearest', origin='lower',extent = extent_dim)   
-        plt.title('Intensity ( x^2 + y^2) Linear Scale') 
-        plt.xlabel('X axis points')
+        plt.title(r'Intensity ( $x^2 + y^2$ ) Linear Scale') 
+        plt.xlabel('Position (m)')
         plt.xticks(Xlocs, Xlabels)
         plt.yticks(Ylocs,Ylabels)
         
