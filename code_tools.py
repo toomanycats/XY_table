@@ -487,7 +487,7 @@ class PlotTools(object):
         plt.ion()
         # LaTeX
         plt.rc('text', usetex=True)
-        plt.rc('font', family='serif')
+        plt.rc('font', family='serif')    
     
     def _get_extent(self, dim):
         '''Get a tuple for the extent of an imshow() plot, so that the plot has the
@@ -512,8 +512,18 @@ class PlotTools(object):
             return extent_dim
         else:
             raise Exception, "Argument is an int of 2 or 3 only. %g   was supplied." %dim
+
+    def get_data_type(self, data_dict, Type):
+        if Type == 'real':
+            return data_dict['comp'].real
+        elif Type == 'phase':
+            return data_dict['phase']
+        elif Type == 'inten':
+            return data_dict['inten']
+        elif Type == 'mag':
+            return data_dict['mag']
   
-    def get_data_type_scale(self, data_dict, Type):
+    def get_data_scale(self, data_dict, Type):
         '''Send in the data_dict from load_mat() and the Type, 'real, inten, phase,mag' and get back the
         data of type requested and the scaled vmin and vmax for use with the colorbar.'''
         
@@ -526,7 +536,7 @@ class PlotTools(object):
             vmin = 0
             vmax = data.max(0).mean()/data.max(0).std()
         elif Type == 'mag':
-            data = data_dict['inten']
+            data = data_dict['mag']
             data = np.sqrt(data)
             vmin = 0    
             vmax = data.max(0).mean()/data.max(0).std() 
@@ -535,7 +545,7 @@ class PlotTools(object):
             vmin = data.min()  
             vmax = data.max() 
                       
-        return data,vmin,vmax                             
+        return vmin, vmax                             
    
     def get_nearest_freq(self, freq_array, Freq):
         '''Find the closest freq value in the experimental data and return the index.'''
@@ -605,21 +615,30 @@ class PlotTools(object):
             raise Exception, """This method is for showing xy planes of data for multiple freq's.
 The data you sent in is only one dimensional, that is, single freq (vna setting of single point) data. """
         
-        
-        data,v_min, v_max = self.get_data_type_scale(data_dict, Type)
+        data = self.get_data_type(data_dict,Type)
+        v_min, v_max = self.get_data_scale(data_dict, Type)
         freq = data_dict['freq']
         
         extent_dim = self._get_extent(2)
+        Xlocs,Xlabels,Ylocs,Ylabels = self._get_ticks(5,5,extent_dim)
   
         plt.imshow(data[0,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)
         plt.title('Type:  %s  Freq: %.3e Hz' %(Type,data_dict['freq'][0]) )
+        plt.xlabel('Position (m)')
+        plt.ylabel('Position (m)')
+        plt.xticks(Xlocs, Xlabels)
+        plt.yticks(Ylocs,Ylabels)
         plt.colorbar()
         sleep(pause)
         plt.clf() 
      
         for i in xrange(1,data.shape[0]):
             plt.imshow(data[i,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)
-            plt.title('Type:  %s  Freq: %.3e Hz' %(Type,data_dict['freq'][i]) ) 
+            plt.title('Type:  %s  , Freq: %.3e Hz' %(Type,data_dict['freq'][i]) ) 
+            plt.xlabel('Position (m)')
+            plt.ylabel('Position (m)')
+            plt.xticks(Xlocs, Xlabels)
+            plt.yticks(Ylocs,Ylabels)
             plt.draw()
             sleep(pause)
             plt.clf()
@@ -628,7 +647,9 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
         ''' Using the mayavi library, plot a 3D barchart of the data of requested type, and freq.'''
     
         extent_dim = self._get_extent(3)
-        data,v_min,v_max = self.get_data_type_scale(data_dict, Type)
+        Xlocs,Xlabels,Ylocs,Ylabels = self._get_ticks(5,5,extent_dim)
+        data = self.get_data_type(data_dict, Type)
+        v_min,v_max = self.get_data_scale(data_dict, Type)
         freq_array = data_dict['freq']
         freq_ind = self.get_nearest_freq(freq_array,Freq)
         
