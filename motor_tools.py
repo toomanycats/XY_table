@@ -41,12 +41,16 @@ class Connection(object):
                     self.con1.open()
                     sleep(2)
                     sn = self._get_sn(self.con1)
+                    if sn == 'unknown':
+                        sn = self._get_sn(self.con1) 
                     x_port_flag, y_port_flag = self.assign_serial_num(sn, x_port_flag, y_port_flag, self.con1)
                 else:
                     self.con2.port = '/dev/ttyUSB%s' %port  
                     self.con2.open()
                     sleep(2)
                     sn = self._get_sn(self.con2) 
+                    if sn == 'unknown':
+                        sn = self._get_sn(self.con2) 
                     x_port_flag, y_port_flag = self.assign_serial_num(sn, x_port_flag, y_port_flag, self.con2)        
 
             except serial.SerialException:
