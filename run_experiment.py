@@ -9,6 +9,7 @@ import traceback
 import matplotlib.pyplot as plt
 from IPython import Shell
 import scipy.io as sio
+from os import path
 
 def prompt_for_return_home():
     return_home = raw_input("""\n**** Do you want the motors to reference the home location ? ****
@@ -185,6 +186,15 @@ changed and does not match the values used in to create the variables "real_arra
 holds the data."""
     tb = traceback.format_exc()
     print tb
+
+except KeyboardInterrupt:
+    print """Control C received. I am saving the data array into a .mat file before quitting.
+The filename will be updated to end with '_incomplete.dat'. """
+    fn,ext = path.splitext(config.mat_data_path)
+    filename = fn + "_incomplete" + ext
+    config.mat_data_path = filename
+    arraytools.save_data_as_matlab(real_array, imag_array)
+    
 except:
     print "Exception raised, closing gpib and serial connections, emailing admin."
     tb = traceback.format_exc()
