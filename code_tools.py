@@ -12,10 +12,12 @@ import numpy as np
 import scipy.io as sio
 import smtplib
 from matplotlib import rc
+import time
 
 class ConfigureDataSet(object):
     '''Mehtods to setup of the experiment variables and store them in the config file. '''
     def __init__(self):
+        
         self.config_parser = ConfigParser.RawConfigParser()
         
         self.Username = getuser() 
@@ -43,13 +45,13 @@ class ConfigureDataSet(object):
         self.real_point_dir = ''
         self.imag_point_dir = ''
         
-    def set_misc_paths(self):
+    def _set_misc_paths(self):
         '''Set the paths for the config, log and .mat file. '''
         self.config_path = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.cfg' )
         self.log_file = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.log')
         self.mat_data_path = path.join(self.DirectoryRoot,self.ExperimentDir,self.FileNamePrefix + '.mat')
 
-    def make_sub_dirs(self):
+    def _make_sub_dirs(self):
         '''Make sub-directories for the experiment. '''
         p = path.join(self.DirectoryRoot,self.ExperimentDir)
         if not path.exists(p):
@@ -63,12 +65,13 @@ class ConfigureDataSet(object):
         if not path.exists(self.imag_point_dir):
             makedirs(self.imag_point_dir)  
         
-    def set_xy_num_pts(self):
+    def _set_xy_num_pts(self):
         '''The total number of data points will be the number of points in X times
         the number of points in Y. '''
         
         self.Num_x_pts = int(np.ceil(self.X_length / self.X_res))
         self.Num_y_pts = int(np.ceil(self.Y_length / self.Y_res))
+        self.Tot_num_pts = self.Num_x_pts * self.Num_y_pts
 
     def get_config_from_user(self): 
         '''Have the user fill out config values interactively. ''' 
@@ -99,9 +102,9 @@ class ConfigureDataSet(object):
 
         ### static config entries
         self.TestSet = 'S21' # transmission always for this experiment
-        self.set_xy_num_pts()
-        self.make_sub_dirs()
-        self.set_misc_paths()
+        self._set_xy_num_pts()
+        self._make_sub_dirs()
+        self._set_misc_paths()
   
     def _add_entries(self):
         '''Add variables set from get_config_from_user(), to a config file.'''
@@ -173,13 +176,15 @@ class ConfigureDataSet(object):
         self.Freq_num_pts = float(self.config_parser.get('Analyzer', 'Number Points'))   
    
         # must be set after the load just like the UI version 
-        self.set_xy_num_pts()
+        self._set_xy_num_pts()
+        self._set_misc_paths()
   
     def write_config(self):
         '''Write the config object to disk as an ascii file. '''
         self._add_entries()
         with open(self.config_path, 'w') as configfile:
             self.config_parser.write(configfile)
+
 
 class CodeTools(object):
     '''Misc. methods. '''    
@@ -245,7 +250,8 @@ class CodeTools(object):
             s = "{d}".format(d=d)
 
         return(s)
-
+    
+      
 class ArrayTools(object):
     '''Methods for working with Numpy arrays. '''
     def __init__(self, Config = None):
@@ -257,7 +263,7 @@ class ArrayTools(object):
         if data.dtype != dtype:
             raise Exception, "The data sent into this method is not of the type %s." %dtype
         
-    def save_data_to_file(self, data_point, data, dtype):  
+    def _save_data_to_file(self, data_point, data, dtype):  
         '''This method saves each data point vector into a text file. The arg 'type'
         is 'mag' or 'phase' . The data type arg is used to chronologically number the points for
         a later reconstruction.''' 
@@ -293,7 +299,7 @@ class ArrayTools(object):
         f.write(str(data))
         f.close() 
                 
-    def make_3d_array(self):
+    def make_empty_3d_array(self):
         '''Initialize a numpy 3D or 2D array for storing  data. This is for using PYthon to
         view the data during the experiment. '''
         
@@ -301,7 +307,7 @@ class ArrayTools(object):
         
         return array
  
-    def get_real(self, data):
+    def _get_real(self, data):
         '''Return the real part of the complex data. '''
         #np.real will not throw an error is the data is other than complex.
         # in this case, the data should always be complex
@@ -311,7 +317,7 @@ class ArrayTools(object):
       
         return real_data
     
-    def get_imag(self,data):
+    def _get_imag(self,data):
         '''Return the imaginary part of the complex data. '''
         self._check_data_type('complex128',data)
         
@@ -319,7 +325,7 @@ class ArrayTools(object):
         
         return imag_data
     
-    def get_magnitude(self, data):
+    def _get_magnitude(self, data):
         '''Takes col of complex numbers and returns col of mag. '''
         self._check_data_type('complex128',data)
         
@@ -328,7 +334,7 @@ class ArrayTools(object):
         
         return mag_data 
 
-    def get_intensity(self,data):
+    def _get_intensity(self,data):
         '''Return the intensity of the complex data, i.e., x^2 + i*y^2 '''
         self._check_data_type('complex128',data)
         
@@ -337,7 +343,7 @@ class ArrayTools(object):
         
         return inten_data
 
-    def get_phase(self,data):
+    def _get_phase(self,data):
         '''Takes cols of complex and returns col of phase '''
         self._check_data_type('complex128',data)
         
@@ -349,9 +355,9 @@ class ArrayTools(object):
     def get_freq_vector(self, config = None):
         '''Given a config path or use the default one, return an np array of frequency values that match 
         the ones used in the experiment. '''
-        try:
-            if config is None:# allows for stand alone program to call this method
+        if config is None:# allows for stand alone program to call this method
                 config = self.config
+        try:
                 
             Deltafreq = (self.config.FreqStop - self.config.FreqStart) / float(self.config.Freq_num_pts)
             freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
@@ -406,17 +412,6 @@ is the single point type. Check the configuration file located in the experiment
         
         return outdata
      
-    def save_flattened_array(self,data):
-        '''This method is for numpy 3D arrays. The only way to save n dim array as text, 
-        is to flatten it out into 1D array, load into program like matlab, then reshape. '''
-        dim1 = str(self.config.Num_y_pts)
-        dim2 = str(self.config.Num_x_pts)
-        dim3 = str(self.config.Freq_num_pts)
-        fname = "%s_flattened_%s_%s_%s.txt " %(self.config.FileNamePrefix,dim1,dim2,dim3)      
-        fullpath = path.join(self.config.DirectoryRoot,self.config.ExperimentDir,fname)
-
-        np.savetxt(fullpath, data)    
-
     def save_data_as_matlab(self, real_array, imag_array, mat_data_path = None, mode = None):
         '''Given a np array of real data and another of imaginary data, write the np array into 
         a complex matrix .mat binary file for use in MATLAB. The out put path default is the experimental
@@ -444,9 +439,9 @@ is the single point type. Check the configuration file located in the experiment
         data = np.zeros((real_array.shape),dtype=complex)
         data.real = real_array
         data.imag = imag_array
-        inten_data = self.get_intensity(data) 
+        inten_data = self._get_intensity(data) 
 
-        phase_data = self.get_phase(data)
+        phase_data = self._get_phase(data)
 
         Out_Data = np.zeros((4,), dtype = np.object)
         temp = [ freq_data, comp_data, inten_data, phase_data ]
@@ -463,7 +458,7 @@ is the single point type. Check the configuration file located in the experiment
         or PlotTools.plot_movie() for a sweep experiment. '''
         
         if mat_data_path is None:
-            mat_data_path= self.config.mat_data_path
+            mat_data_path = self.config.mat_data_path
             
         data_dict = sio.loadmat(mat_data_path)    
         try:
@@ -478,16 +473,19 @@ is the single point type. Check the configuration file located in the experiment
                     }
         
         return out_data                   
+ 
                            
 class PlotTools(object):
     '''Methods for plotting the data. '''
-    def __init__(self, Config = None):
+    def __init__(self, Config=None, data_dict=None):
         self.config = Config     
         plt.figure()
         plt.ion()
         # LaTeX
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')    
+        
+        self.data_dict = data_dict
     
     def _get_extent(self, dim):
         '''Get a tuple for the extent of an imshow() plot, so that the plot has the
@@ -513,7 +511,7 @@ class PlotTools(object):
         else:
             raise Exception, "Argument is an int of 2 or 3 only. %g   was supplied." %dim
 
-    def get_data_type(self, data_dict, Type):
+    def _get_data_type(self, data_dict, Type):
         if Type == 'real':
             return data_dict['comp'].real
         elif Type == 'phase':
@@ -526,7 +524,9 @@ class PlotTools(object):
     def get_data_scale(self, data_dict, Type):
         '''Send in the data_dict from load_mat() and the Type, 'real, inten, phase,mag' and get back the
         data of type requested and the scaled vmin and vmax for use with the colorbar.'''
-        
+        if data_dict is None:
+            data_dict = self.data_dict
+            
         if Type == 'real':
             data = data_dict['comp'].real
             vmin = data.min(0).mean()/data.min(0).std()
@@ -547,8 +547,10 @@ class PlotTools(object):
                       
         return vmin, vmax                             
    
-    def get_nearest_freq(self, freq_array, Freq):
+    def get_nearest_freq_index(self, Freq, freq_array=None):
         '''Find the closest freq value in the experimental data and return the index.'''
+        if freq_array is None:
+            freq_array = self.data_dict['freq']
         
         if Freq < self.config.FreqStart:
             print "The freq you requested %.3e  is lower than the Start Freq of the experiment.\n" %Freq
@@ -580,7 +582,7 @@ class PlotTools(object):
         
         return Xlocs,Xlabels,Ylocs,Ylabels
                       
-    def invivo_plot(self, real, intensity, z=0):
+    def _invivo_plot(self, real, intensity, z=0):
         '''Plot the data in real time as it is collected for a sanity check and to monitor progress. 
         The z arg is the xy plane you want to plot. For single point mode, z = 0 (default), for sweep 
         you can choose. I do not use a color bar b/c it's gets too messy and is not that useful.'''
@@ -605,17 +607,21 @@ class PlotTools(object):
         
         plt.draw()
 
-    def plot_movie(self, data_dict, Type, interp = 'bilinear', pause = 0.25):
+    def plot_movie(self, Type, interp = 'bilinear', pause = 0.25, data_dict=None):
         '''Show movie of plots. Specify Type as 'real,inten, phase' and pause is in seconds.
         defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array.
         A colorbar is used here. This method is for a completed run. '''        
 
+        # if not passing in the data dict, then you must want to use
+        # the Data class object
+        if data_dict is None:
+            data_dict = self.data_dict
         
         if len(data_dict['freq'].shape) == 0:
             raise Exception, """This method is for showing xy planes of data for multiple freq's.
 The data you sent in is only one dimensional, that is, single freq (vna setting of single point) data. """
         
-        data = self.get_data_type(data_dict,Type)
+        data = self._get_data_type(data_dict,Type)
         v_min, v_max = self.get_data_scale(data_dict, Type)
         freq = data_dict['freq']
         
@@ -643,15 +649,17 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
             sleep(pause)
             plt.clf()
 
-    def plot_3d_barchart(self, data_dict, Type, Freq):
+    def plot_3d_barchart(self, Type, Freq, data_dict=None):
         ''' Using the mayavi library, plot a 3D barchart of the data of requested type, and freq.'''
+        if data_dict is None:
+            data_dict = self.data_dict  
     
         extent_dim = self._get_extent(3)
         Xlocs,Xlabels,Ylocs,Ylabels = self._get_ticks(5,5,extent_dim)
-        data = self.get_data_type(data_dict, Type)
+        data = self._get_data_type(data_dict, Type)
         v_min,v_max = self.get_data_scale(data_dict, Type)
         freq_array = data_dict['freq']
-        freq_ind = self.get_nearest_freq(freq_array,Freq)
+        freq_ind = self.get_nearest_freq_index(freq_array,Freq)
         
         from mayavi import mlab
         mlab.figure( bgcolor=(0.5,0.5,0.5) )# grey bg
@@ -663,6 +671,25 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
   
     def close_plot(self):
         plt.close('all')
+
+
+class Data(ArrayTools, PlotTools):
+    '''Data object. This object takes the path to the config file as an argument and returns 
+    an object that contains the data, with plot methods and array tools methods. '''
+    def __init__(self, config_path):
+        
+        self.config = ConfigureDataSet()
+        self.config.load_config(config_path)
+        
+        ArrayTools.__init__(self, self.config)
+        self.data_dict =  ArrayTools().load_mat(self.config.mat_data_path)
+      
+        PlotTools.__init__(self, self.config, self.data_dict)
+        
+        
+             
+    
+    
         
 
         

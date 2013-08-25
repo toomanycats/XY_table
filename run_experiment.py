@@ -41,13 +41,14 @@ def loop_along_sample(direction):
     '''The real meat of the experiment is controlled here. The sample is
     looped across and data is taken and saved. The motors move along the negative
     x axis, then return to the x origin, move negative along y axis, then repeat the x movements.'''
+
     data_point = 0 # used to name the individual data point files. 
     index_x = 0
     for index_y in xrange(0,config.Num_y_pts):
-        take_data(data_point, index_y, index_x)
+        #take_data(data_point, index_y, index_x)
         for index_x in xrange(0,config.Num_x_pts):
-            mx.move_rel(direction*config.X_res)
             take_data(data_point, index_y, index_x)
+            mx.move_rel(direction*config.X_res)
             data_point += 1         
         mx.move_rel(-1*direction*config.X_length) # swing back to x = 0     
         my.move_rel(direction*config.Y_res)   
@@ -58,18 +59,18 @@ def take_data(data_point, index_y, index_x):
     # get the raw data as complex pairs
     data = _take_data()
 
-    real_data = arraytools.get_real(data)
+    real_data = arraytools._get_real(data)
     real_array[:,index_y, index_x] = real_data
-    arraytools.save_data_to_file(data_point, real_data, 'real')
+    arraytools._save_data_to_file(data_point, real_data, 'real')
    
-    imag_data = arraytools.get_imag(data)
+    imag_data = arraytools._get_imag(data)
     imag_array[:,index_y, index_x] = imag_data
-    arraytools.save_data_to_file(data_point, imag_data, 'imag')    
+    arraytools._save_data_to_file(data_point, imag_data, 'imag')    
    
-    inten_data = arraytools.get_intensity(data)
+    inten_data = arraytools._get_intensity(data)
     inten_array[:,index_y,index_x] = inten_data
 
-    plottools.invivo_plot(real_array, inten_array)
+    plottools._invivo_plot(real_array, inten_array)
 
 def _take_data():
     '''Sub routine of take_data() that deals with the single or sweep mode. '''
@@ -122,6 +123,8 @@ def review_config_settings(config):
         review_config_settings(config)
    
 try:
+    codetools = code_tools.CodeTools()
+    
     # get the config setup interactively
     config = code_tools.ConfigureDataSet()
     config.get_config_from_user()
@@ -147,7 +150,7 @@ try:
     arraytools = code_tools.ArrayTools(config)
     real_array =   arraytools.make_3d_array()
     imag_array = arraytools.make_3d_array()
-    inten_array = arraytools.make_3d_array()# for plotting
+    inten_array = arraytools.make_empty_3d_array()# for plotting
 
     # plotting 
     plottools = code_tools.PlotTools(config)
