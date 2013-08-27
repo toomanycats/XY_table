@@ -12,12 +12,10 @@ import numpy as np
 import scipy.io as sio
 import smtplib
 from matplotlib import rc
-import time
 
 class ConfigureDataSet(object):
     '''Mehtods to setup of the experiment variables and store them in the config file. '''
     def __init__(self):
-        
         self.config_parser = ConfigParser.RawConfigParser()
         
         self.Username = getuser() 
@@ -358,6 +356,14 @@ class ArrayTools(object):
         if config is None:# allows for stand alone program to call this method
                 config = self.config
         try:
+>>>>>>>>>>>>>>>>>>>> File 1
+>>>>>>>>>>>>>>>>>>>> File 2
+            if config is None:# allows for stand alone program to call this method
+                config = self.config
+>>>>>>>>>>>>>>>>>>>> File 3
+            if config is None:# allows for stand alone program to call this method
+                config = self.config
+<<<<<<<<<<<<<<<<<<<<
                 
             Deltafreq = (self.config.FreqStop - self.config.FreqStart) / float(self.config.Freq_num_pts)
             freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
@@ -500,6 +506,9 @@ class PlotTools(object):
             r = np.ceil(self.config.Num_y_pts / self.config.Num_x_pts)
             x_scale = r * self.config.Num_x_pts
             extent_dim = (0, x_scale, 0, self.config.Num_y_pts) 
+
+        if self.config.Num_x_pts == self.config.Num_y_pts:
+            extent_dim = (0, self.config.Num_x_pts, 0, self.config.Num_y_pts)
             
         if dim == 2:    
             return extent_dim 
