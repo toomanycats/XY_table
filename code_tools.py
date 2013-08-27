@@ -682,8 +682,11 @@ class Data(ArrayTools, PlotTools):
         self.config.load_config(config_path)
         
         ArrayTools.__init__(self, self.config)
-        self.data_dict =  ArrayTools().load_mat(self.config.mat_data_path)
-      
+        try:
+            self.data_dict =  ArrayTools().load_mat(self.config.mat_data_path)
+        except IOError:
+            print " No .mat file of data found, loading data from single point files."
+                 
         PlotTools.__init__(self, self.config, self.data_dict)
         
         
