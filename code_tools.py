@@ -580,6 +580,13 @@ class PlotTools(object):
             Xlabels = np.arange(0, self.config.X_length, x_sub_div * self.config.X_res/r )
             Ylabels = np.arange(0, self.config.Y_length, y_sub_div * self.config.Y_res )
         
+        elif self.config.Y_res == self.config.X_res:
+            Xlabels = np.arange(0, self.config.X_length, x_sub_div * self.config.X_res )
+            Ylabels = np.arange(0, self.config.Y_length, y_sub_div * self.config.Y_res )
+            
+        else:
+            raise  Exception, "Y and/or X resolution setting in config is messed up..."    
+        
         return Xlocs,Xlabels,Ylocs,Ylabels
                       
     def _invivo_plot(self, real, intensity, z=0):
