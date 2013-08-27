@@ -502,13 +502,16 @@ class PlotTools(object):
             y_scale = r * self.config.Num_y_pts
             extent_dim = (0, self.config.Num_x_pts, 0, y_scale) 
 
-        if self.config.Num_x_pts < self.config.Num_y_pts:
+        elif self.config.Num_x_pts < self.config.Num_y_pts:
             r = np.ceil(self.config.Num_y_pts / self.config.Num_x_pts)
             x_scale = r * self.config.Num_x_pts
             extent_dim = (0, x_scale, 0, self.config.Num_y_pts) 
 
-        if self.config.Num_x_pts == self.config.Num_y_pts:
+        elif self.config.Num_x_pts == self.config.Num_y_pts:
             extent_dim = (0, self.config.Num_x_pts, 0, self.config.Num_y_pts)
+        
+        else:
+            raise Exception, "Some is wrong with the config.Num_x_pts or config.Num_y_pts."
             
         if dim == 2:    
             return extent_dim 
