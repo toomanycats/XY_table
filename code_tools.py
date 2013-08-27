@@ -181,6 +181,7 @@ class ConfigureDataSet(object):
         with open(self.config_path, 'w') as configfile:
             self.config_parser.write(configfile)
 
+
 class CodeTools(object):
     '''Misc. methods. '''    
     
@@ -245,6 +246,7 @@ class CodeTools(object):
             s = "{d}".format(d=d)
 
         return(s)
+
 
 class ArrayTools(object):
     '''Methods for working with Numpy arrays. '''
@@ -478,6 +480,7 @@ is the single point type. Check the configuration file located in the experiment
                     }
         
         return out_data                   
+    
                            
 class PlotTools(object):
     '''Methods for plotting the data. '''
@@ -502,6 +505,9 @@ class PlotTools(object):
             r = np.ceil(self.config.Num_y_pts / self.config.Num_x_pts)
             x_scale = r * self.config.Num_x_pts
             extent_dim = (0, x_scale, 0, self.config.Num_y_pts) 
+
+        if self.config.Num_x_pts == self.config.Num_y_pts:
+            extent_dim = (0, self.config.Num_x_pts, 0, self.config.Num_y_pts)
             
         if dim == 2:    
             return extent_dim 
