@@ -200,7 +200,7 @@ class CodeTools(object):
         # me == the sender's email address
         me = 'Man Lab Data Machine'
         # you == the recipient's email address
-        recipients = ['wmanlab@gmail.com', 'dpcuneo@gmail.com','theebbandflow@yahoo.com']
+        recipients = ['wmanlab@gmail.com', 'dpcuneo@fastmail.fm','theebbandflow@yahoo.com']
         msg['Subject'] = 'Automatically generated email.'
         msg['From'] = "Dr. Man's Lab Linux Machine."
         msg['To'] = 'System Admin.'
