@@ -202,7 +202,7 @@ class CodeTools(object):
         # me == the sender's email address
         me = 'Man Lab Data Machine'
         # you == the recipient's email address
-        recipients = ['wmanlab@gmail.com', 'dpcuneo@gmail.com','theebbandflow@yahoo.com']
+        recipients = ['wmanlab@gmail.com', 'dpcuneo@fastmail.fm','theebbandflow@yahoo.com']
         msg['Subject'] = 'Automatically generated email.'
         msg['From'] = "Dr. Man's Lab Linux Machine."
         msg['To'] = 'System Admin.'
@@ -356,14 +356,12 @@ class ArrayTools(object):
         if config is None:# allows for stand alone program to call this method
                 config = self.config
         try:
->>>>>>>>>>>>>>>>>>>> File 1
->>>>>>>>>>>>>>>>>>>> File 2
+
             if config is None:# allows for stand alone program to call this method
                 config = self.config
->>>>>>>>>>>>>>>>>>>> File 3
+
             if config is None:# allows for stand alone program to call this method
                 config = self.config
-<<<<<<<<<<<<<<<<<<<<
                 
             Deltafreq = (self.config.FreqStop - self.config.FreqStart) / float(self.config.Freq_num_pts)
             freq_vec = np.arange(self.config.FreqStart, self.config.FreqStop, Deltafreq)
