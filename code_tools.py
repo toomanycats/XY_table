@@ -477,7 +477,7 @@ is the single point type. Check the configuration file located in the experiment
                     }
         
         return out_data                   
- 
+     
                            
 class PlotTools(object):
     '''Methods for plotting the data. '''
@@ -703,14 +703,34 @@ class Data(ArrayTools, PlotTools):
             self.data_dict =  ArrayTools().load_mat(self.config.mat_data_path)
         except IOError:
             print " No .mat file of data found, loading data from single point files."
-                 
+            self.data_dict = self._create_data_dict_from_files()  
+           
         PlotTools.__init__(self, self.config, self.data_dict)
+               
+    def _create_data_dict_from_files(self):
+        ''' Recreates the data types to make a data_dict.
+        'freq', 'comp', 'inten', 'phase' '''   
+         
+        real_data = self.load_data_files('real')
+        real_array = self.reshape_1D_to_3D(real_data)
         
+        imag_data = self.load_data_files('imag')
+        imag_array = self.reshape_1D_to_3D(imag_data)  
         
-             
+        comp = self.make_empty_3d_array()
+        comp = comp(np.complex(real_data, image_data))
+        
+        freq = self.get_freq_vector()
+        inten = self._get_intensity(comp)
+        phase = self._get_phase(comp)
     
-    
+        data_dict = {'freq':freq,
+                     'comp':comp,
+                     'inten':inten,
+                     'phase':phase
+                     }
         
+        return data_dict
 
         
         
