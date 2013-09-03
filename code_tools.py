@@ -497,12 +497,12 @@ class PlotTools(object):
         
         if self.config.Num_x_pts > self.config.Num_y_pts:
             r = np.ceil(self.config.Num_x_pts / self.config.Num_y_pts)
-            y_scale = r * self.config.Num_y_pts
+            y_scale = int(r * self.config.Num_y_pts)
             extent_dim = (0, self.config.Num_x_pts, 0, y_scale) 
 
         elif self.config.Num_x_pts < self.config.Num_y_pts:
             r = np.ceil(self.config.Num_y_pts / self.config.Num_x_pts)
-            x_scale = r * self.config.Num_x_pts
+            x_scale = int(r * self.config.Num_x_pts)
             extent_dim = (0, x_scale, 0, self.config.Num_y_pts) 
 
         elif self.config.Num_x_pts == self.config.Num_y_pts:
@@ -554,6 +554,9 @@ class PlotTools(object):
             data = data_dict['phase']
             vmin = data.min()  
             vmax = data.max() 
+         
+        else:
+            raise Exception, "No type was specified."
                       
         return vmin, vmax                             
    
@@ -563,15 +566,15 @@ class PlotTools(object):
             freq_array = self.data_dict['freq']
         
         if Freq < self.config.FreqStart:
-            print "The freq you requested %.3e  is lower than the Start Freq of the experiment.\n" %Freq
-            print "The range of Freq is %.3e  to    %.3e" %(self.config.FreqStart, self.config.FreqStop)
-            return None
+            raise Exception, """The freq you requested %.3e  is lower than the Start Freq of the experiment.
+The range  is %.3e  to  %.3e""" %(Freq, self.config.FreqStart, self.config.FreqStop)
+            
         elif Freq > self.config.FreqStop:
-            print "The freq you requested %f  is higher than the Stop Freq of the experiment.\n" %Freq
-            print "The range of Freq is %.3e   to    %.3e" %(self.config.FreqStart, self.config.FreqStop)
-            return None
-        
-        index = np.where(freq_array >= Freq)[0][0] 
+            raise Exception, """The freq you requested %.3e  is higher than the Stop Freq of the experiment.
+The range  is %.3e   to   %.3e""" %(Freq, self.config.FreqStart, self.config.FreqStop)
+            
+        else:
+            index = np.where(freq_array >= Freq)[0][0] 
         
         return index
 
@@ -624,13 +627,11 @@ class PlotTools(object):
         
         plt.draw()
 
-    def plot_movie(self, Type, interp = 'bilinear', pause = 0.25, data_dict=None):
+    def plot_movie(self, Type='real', data_dict=None, interp='bilinear', pause=0.25):
         '''Show movie of plots. Specify Type as 'real,inten, phase' and pause is in seconds.
         defaults are 'real' and 0.25 . Use ArrayTools.load_mat() to get the .mat file into a numpy array.
         A colorbar is used here. This method is for a completed run. '''        
 
-        # if not passing in the data dict, then you must want to use
-        # the Data class object
         if data_dict is None:
             data_dict = self.data_dict
         
@@ -639,7 +640,7 @@ class PlotTools(object):
 The data you sent in is only one dimensional, that is, single freq (vna setting of single point) data. """
         
         data = self._get_data_type(data_dict,Type)
-        v_min, v_max = self.get_data_scale(data_dict, Type)
+        v_min, v_max = self.get_data_scale(data_dict,Type)
         freq = data_dict['freq']
         
         extent_dim = self._get_extent(2)
@@ -666,7 +667,7 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
             sleep(pause)
             plt.clf()
 
-    def plot_3d_barchart(self, Type, Freq, data_dict=None):
+    def plot_3d_barchart(self, Freq, Type='real', data_dict=None):
         ''' Using the mayavi library, plot a 3D barchart of the data of requested type, and freq.'''
         if data_dict is None:
             data_dict = self.data_dict  
@@ -676,7 +677,7 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
         data = self._get_data_type(data_dict, Type)
         v_min,v_max = self.get_data_scale(data_dict, Type)
         freq_array = data_dict['freq']
-        freq_ind = self.get_nearest_freq_index(freq_array,Freq)
+        freq_ind = self.get_nearest_freq_index(Freq, freq_array)
         
         from mayavi import mlab
         mlab.figure( bgcolor=(0.5,0.5,0.5) )# grey bg
@@ -685,7 +686,38 @@ The data you sent in is only one dimensional, that is, single freq (vna setting 
         mlab.show()
          
         #return f  
-  
+ 
+    def plot_single_freq(self, Type='real', Freq=None, data_dict=None, interp='nearest'):
+        '''Plot a single freq. You can use this function with a mutli freq data set or
+        or a single freq data set. The default freq for multi freq data sets is the mid point
+        of the freq list.'''
+        
+        if data_dict is None:
+            data_dict = self.data_dict
+        
+        if Freq is None:
+            if len(data_dict['freq']) > 1:
+                freq_index = np.floor( len( data_dict['freq'] ) / 2.0 )
+            else:
+                freq_index = data_dict['freq'].find(self.config.SingleFrequency)
+                    
+        elif  Freq not in data_dict['freq']:
+            print "The freq you sent in is not in the freq list, so I found the nearest one from below."
+            freq_index = self.get_nearest_freq_index(Freq, data_dict['freq'])
+                
+        
+        extent_dim = self._get_extent(2)
+        Xlocs,Xlabels,Ylocs,Ylabels = self._get_ticks(5,5,extent_dim)
+        data = self._get_data_type(data_dict, Type)
+        v_min,v_max = self.get_data_scale(data_dict, Type)
+        
+        plt.imshow(data[freq_index,:,:],cmap='jet',interpolation=interp,vmin=v_min,vmax=v_max,origin='lower',extent = extent_dim)             
+        plt.title('Freq .3e Hz' %data_dict['freq'][freq_index])
+        plt.xlabel('Position (m)')
+        plt.ylabel('Position (m)')
+        plt.xticks(Xlocs, Xlabels)
+        plt.yticks(Ylocs,Ylabels)
+
     def close_plot(self):
         plt.close('all')
 
@@ -694,10 +726,18 @@ class Data(ArrayTools, PlotTools):
     '''Data object. This object takes the path to the config file as an argument and returns 
     an object that contains the data, with plot methods and array tools methods. '''
     def __init__(self, config_path):
-        
+        if path.splitext(config_path)[-1] != '.cfg':
+            raise Exception, """You entered the path to a file that is not a configuration file.
+Configuation files for this  experiment are named with the file prefix used during collection and end
+with the extention .cfg
+
+Example: Test_001.cfg 
+
+They live in /media/Data/<experiment_name>/<file_prefix.cfg>"""
+
         self.config = ConfigureDataSet()
         self.config.load_config(config_path)
-        
+
         ArrayTools.__init__(self, self.config)
         try:
             self.data_dict =  ArrayTools().load_mat(self.config.mat_data_path)
