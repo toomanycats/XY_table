@@ -5,3 +5,4 @@ test_config.py
 .pydevproject*
 *BACKUP*
 mag_data.npy
+test.py*
