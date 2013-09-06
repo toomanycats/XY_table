@@ -1,15 +1,17 @@
 #!/usr/bin/python
 
+#Standard Library
+from os import path
+import traceback
+#math related libraries
+from IPython import Shell
+import matplotlib.pyplot as plt
+import scipy.io as sio
+import numpy as np
+#Custom libraries for this project
 import motor_tools
 import vna_tools
 import code_tools
-import code
-import numpy as np
-import traceback
-import matplotlib.pyplot as plt
-from IPython import Shell
-import scipy.io as sio
-from os import path
 
 def prompt_for_return_home():
     return_home = raw_input("""\n**** Do you want the motors to reference the home location ? ****

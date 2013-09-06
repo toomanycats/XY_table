@@ -1,8 +1,7 @@
-import serial
-import re
 from time import sleep
 import subprocess
-from code_tools import CodeTools
+import serial
+
 import code_tools
 
 class Connection(object):
@@ -104,7 +103,7 @@ class Motor(object):
     def __init__(self, serial_con):
         #self.con = serial.Serial(None, 9600, timeout = 0, writeTimeout = 0)
         self.con = serial_con
-        self.codetools = CodeTools()
+        self.codetools = code_tools.CodeTools()
         self._steps_per_rev =  {'256':51200,'128':25600,'64':12800,'32':6400,
                                 '16':3200,'8':1600,'4':800,'2':400,'1':200,
                                 '250':50000,'200':40000,'125':25000,'100':2000,

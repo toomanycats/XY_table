@@ -1,17 +1,18 @@
 from email.mime.text import MIMEText
 from getpass import getuser
-from mpl_toolkits.mplot3d import Axes3D
 from os import path, makedirs
 from time import sleep
 import ConfigParser
 import datetime
 import math
+
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-import numpy as np
+from matplotlib import rc
 import numpy as np
 import scipy.io as sio
 import smtplib
-from matplotlib import rc
+
 
 class ConfigureDataSet(object):
     '''Mehtods to setup of the experiment variables and store them in the config file. '''
