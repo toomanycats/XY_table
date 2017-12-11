@@ -16,22 +16,31 @@ there.
 # Moving Table Hardware
 The moving table was produced in house at SFSU by Peter Verdone.
 
-![XY Table Being Built](https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00236.jpg | width=256)
+<table class="image">
+<caption align="bottom">XY Table without ceiling plane.</caption>
+<tr><td><img src="https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00236.jpg", width=200/></td></tr>
+</table>
 
-![XY Table Being Built](https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00241.jpg | width=256)
+<table class="image">
+<caption align="bottom">XY Table with ceiling plane installed.</caption>
+<tr><td><img src="https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00241.jpg", width=200/></td></tr>
+</table>
 
 Each stepper motor has two end of travel switches to prevent damage to the rig and
 to programatically define the available travel for the crystal carrier.
-![End of Travel Sensors](https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00237.jpg | width=256)
-
-![HP8510C VNA Head Module](https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00245.jpg | width=256)
-
-# Early Crystal Design
-![Crystals](https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00246.jpg | width=256)
+<table class="image">
+<caption align="bottom">End of travel sensors.</caption>
+<tr><td><img src="https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00237.jpg", width=200/></td></tr>
+</table>
 
 <table class="image">
-<caption align="bottom">testing</caption>
-<tr><td><img src="https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00246.jpg | width=256"/></td></tr>
+<caption align="bottom">HP8510C Vector Network Analyzer. Old unit had some boards repaired.</caption>
+<tr><td><img src="https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00245.jpg", width=200/></td></tr>
+</table>
+
+<table class="image">
+<caption align="bottom">Early crystal designed with dielectric rods and spacers.</caption>
+<tr><td><img src="https://github.com/toomanycats/XY_table/blob/master/experiment_pics/CAM00246.jpg", width=200/></td></tr>
 </table>
 
 Cheers,
