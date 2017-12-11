@@ -10,7 +10,7 @@ There's a thread on ubuntuforums.org that I started when getting this setup for 
 the install instructions for the linux-gpib module are there.
 
 # Hardware
-![alt text](https://github.com/toomanycats/XY_table/tree/master/experiment_pics/cam00236.jpg)
+![XY Table Being Built](https://github.com/toomanycats/XY_table/master/experiment_pics/cam00236.jpg)
 
 Each stepper motor has two end of travel switches to prevent damage to the rig and
 to programatically define the available travel for the crystal carrier.
